@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Araç ve Şoför Atama</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        th {
+            width: 35%;
+            background-color: #f8f9fa;
+        }
+        td, th {
+            vertical-align: middle !important;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container-fluid px-4 py-3" style="max-width: 1350px;">
+
+    <!-- Üst Şeritli Logo ve Başlık -->
+    <div class="bg-danger text-white py-3 px-4 rounded shadow mb-4 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <img src="{% static 'talep/logo.png' %}" alt="Logo" style="height: 80px;" class="me-4">
+            <h2 class="mb-0 fw-bold">ARAÇ TALEP SİSTEMİ</h2>
+        </div>
+        <span class="fw-semibold">Araç ve Şoför Atama</span>
+    </div>
+
+    <!-- İçerik: Talep Bilgisi ve Atama Formu yan yana -->
+    <div class="row g-4">
+        <!-- Talep Bilgisi -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light fw-semibold">Talep Bilgisi</div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered table-hover mb-0">
+                        <tr><th>Talep Eden</th><td>{{ talep.talep_eden_adsoyad }}</td></tr>
+                        <tr><th>Başkanlık</th><td>{{ talep.get_baskanlik_display }}</td></tr>
+                        <tr><th>Birim</th><td>{{ talep.birim }}</td></tr>
+                        <tr><th>İlçe</th><td>{{ talep.gidilecek_ilce }}</td></tr>
+                        <tr><th>Görev Açıklaması</th><td>{{ talep.gorev_aciklamasi }}</td></tr>
+                        <tr><th>Gidiş</th><td>{{ talep.gidis_tarihi }} {{ talep.gidis_saati }}</td></tr>
+                        <tr><th>Kişi Sayısı</th><td>{{ talep.kisi_sayisi }}</td></tr>
+                        {% if ek_kisiler %}
+                            <tr>
+                                <th>Ek Kişiler</th>
+                                <td>
+                                    <ul class="mb-0 ps-3">
+                                        {% for kisi in ek_kisiler %}
+                                            <li>{{ kisi.ad_soyad }} - {{ kisi.unvan }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Atama Formu -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light fw-semibold">Araç ve Şoför Seçimi</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_arac" class="form-label">Araç Seç</label>
+                            <select name="arac" id="id_arac" class="form-select" required>
+                                <option value="" disabled selected>-- Araç Seçin --</option>
+                                {% for arac in araclar %}
+                                    <option value="{{ arac.id }}">{{ arac.plaka }} - {{ arac.marka_model }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_sofor" class="form-label">Şoför Seç</label>
+                            <select name="sofor" id="id_sofor" class="form-select" required>
+                                <option value="" disabled selected>-- Şoför Seçin --</option>
+                                {% for sofor in soforler %}
+                                    <option value="{{ sofor.id }}">{{ sofor.ad_soyad }} - {{ sofor.telefon }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'bas_sofor_panel' %}" class="btn btn-secondary">🔙 Vazgeç</a>
+                            <button type="submit" class="btn btn-success">✅ Onayla ve Gönder</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

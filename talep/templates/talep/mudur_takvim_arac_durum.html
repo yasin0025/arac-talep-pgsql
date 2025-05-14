@@ -1,0 +1,118 @@
+<div class="card shadow-sm p-4 bg-white">
+    <h5 class="text-danger mb-4">Takvim ve Araç Durumları</h5>
+
+    <!-- Takvim Tarih Seçimi -->
+    <form method="get" id="mudur-tarih-form" class="mb-4">
+        <label for="mudurTakvimTarihi" class="form-label fw-bold">Tarih Seçin:</label>
+        <input type="date"
+               id="mudurTakvimTarihi"
+               name="tarih"
+               class="form-control w-auto d-inline-block ms-2"
+               value="{{ secilen_tarih|date:'Y-m-d' }}">
+    </form>
+
+    <!-- Görevler -->
+    {% if bugunku_gorevler %}
+        <h6 class="text-primary mt-4 mb-2 fw-bold">Seçilen Gündeki Görevler</h6>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>Talep Eden</th>
+                        <th>Başkanlık / Birim</th>
+                        <th>İlçe</th>
+                        <th>Tarih / Saat</th>
+                        <th>Araç</th>
+                        <th>Şoför</th>
+                        <th>Detay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in bugunku_gorevler %}
+                    <!-- Ana Satır -->
+                    <tr>
+                        <td>{{ item.talep.talep_eden_adsoyad }}</td>
+                        <td>{{ item.talep.get_baskanlik_display }} / {{ item.talep.birim }}</td>
+                        <td>{{ item.talep.gidilecek_ilce }}</td>
+                        <td>{{ item.talep.gidis_tarihi }} {{ item.talep.gidis_saati }}</td>
+                        <td>
+                            {{ item.arac.plaka }}<br>
+                            <small class="text-muted">{{ item.arac.marka_model }}</small>
+                        </td>
+                        <td>
+                            {{ item.sofor.ad_soyad }}<br>
+                            <small class="text-muted">{{ item.sofor.telefon }}</small>
+                        </td>
+                        <td>
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#detay{{ item.id }}">
+                                Detaylar
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Detay Satırı -->
+                    <tr class="collapse bg-light" id="detay{{ item.id }}">
+                        <td colspan="7" class="text-start">
+                            <strong>Görev Açıklaması:</strong> {{ item.talep.gorev_aciklamasi|linebreaks }}<br>
+                            <strong>Ek Kişiler:</strong>
+                            {% if item.talep.ek_kisiler.exists %}
+                                <ul class="mb-0 ps-3">
+                                    {% for kisi in item.talep.ek_kisiler.all %}
+                                        <li>{{ kisi.ad_soyad }} - <span class="text-muted">{{ kisi.unvan }}</span></li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Yok</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted">Seçilen tarihte görev bulunmamaktadır.</p>
+    {% endif %}
+
+    <!-- Müsait Araç ve Şoförler -->
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <h6 class="text-success fw-bold">Müsait Araçlar</h6>
+            <ul class="list-group">
+                {% for arac in musait_araclar %}
+                    <li class="list-group-item">{{ arac.plaka }} - {{ arac.marka_model }}</li>
+                {% empty %}
+                    <li class="list-group-item text-muted">Müsait araç yok.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h6 class="text-success fw-bold">Müsait Şoförler</h6>
+            <ul class="list-group">
+                {% for sofor in musait_soforler %}
+                    <li class="list-group-item">{{ sofor.ad_soyad }} - {{ sofor.telefon }}</li>
+                {% empty %}
+                    <li class="list-group-item text-muted">Müsait şoför yok.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tarihInput = document.querySelector('#mudur-tarih-form input[name="tarih"]');
+    const form = document.getElementById('mudur-tarih-form');
+
+    if (tarihInput && form) {
+        tarihInput.addEventListener('change', function () {
+            const selectedDate = this.value;
+            const currentPath = window.location.pathname;
+            const newUrl = `${currentPath}?tarih=${selectedDate}#mudur_durumtakvim`;
+            window.location.href = newUrl;
+        });
+    }
+});
+</script>

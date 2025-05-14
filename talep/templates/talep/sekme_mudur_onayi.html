@@ -1,0 +1,35 @@
+<div class="table-responsive bg-white p-3 shadow">
+    <h5 class="text-danger">Yönetici Onayı Bekleyen Talepler</h5>
+    <table class="table table-bordered table-striped mt-3">
+        <thead class="table-light">
+            <tr>
+                <th>Talep Eden</th>
+                <th>Başkanlık</th>
+                <th>Birim</th>
+                <th>İlçe</th>
+                <th>Gidiş Tarihi</th>
+                <th>Gidiş Saati</th>
+                <th>Araç</th>
+                <th>Şoför</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for talep in talepler_mudur %}
+            <tr>
+                <td>{{ talep.talep_eden_adsoyad }}</td>
+                <td>{{ talep.get_baskanlik_display }}</td>
+                <td>{{ talep.birim }}</td>
+                <td>{{ talep.gidilecek_ilce }}</td>
+                <td>{{ talep.gidis_tarihi }}</td>
+                <td>{{ talep.gidis_saati }}</td>
+                <td>{{ talep.talep_onay.arac.plaka }}</td>
+                <td>{{ talep.talep_onay.sofor.ad_soyad }}</td>
+                <td><span class="text-muted">Yönetici Onayı Bekliyor</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9" class="text-center">Bekleyen talep bulunmamaktadır.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

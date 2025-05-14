@@ -1,0 +1,133 @@
+<!-- ÖZEL STİL -->
+<style>
+    .table-striped-custom tbody tr:nth-child(odd) {
+        background-color: #f9f9f9;
+    }
+    .table-striped-custom tbody tr:hover {
+        background-color: #f1f1f1;
+        cursor: pointer;
+    }
+    .table-striped-custom .collapse {
+        background-color: #f8f9fa !important;
+    }
+</style>
+
+<!-- GÖREV KARTI -->
+<div class="card shadow-sm mt-4">
+    <div class="bg-danger text-white px-3 py-2 rounded-top">
+        <h5 class="mb-0">Geçmiş Görevler</h5>
+    </div>
+    <div class="p-4 bg-white rounded-bottom">
+        {% if talepler_gecmis %}
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered align-middle text-center table-striped-custom">
+                <thead class="table-light">
+                    <tr>
+                        <th>Talep Eden</th>
+                        <th>Başkanlık</th>
+                        <th>Birim</th>
+                        <th>İlçe</th>
+                        <th>Gidiş</th>
+                        <th>Araç</th>
+                        <th>Şoför</th>
+                        <th>Kişi</th>
+                        <th>Detay</th>
+                        <th>Varış Saati</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for talep in talepler_gecmis %}
+                    <tr>
+                        <td>{{ talep.talep_eden_adsoyad }}</td>
+                        <td>{{ talep.get_baskanlik_display }}</td>
+                        <td>{{ talep.birim }}</td>
+                        <td>{{ talep.gidilecek_ilce }}</td>
+                        <td>
+                            <div>{{ talep.gidis_tarihi }}</div>
+                            <small class="text-muted">{{ talep.gidis_saati }}</small>
+                        </td>
+                        <td>
+                            {% if talep.talep_onay.arac %}
+                                {{ talep.talep_onay.arac.plaka }}<br>
+                                <small class="text-muted">{{ talep.talep_onay.arac.marka_model }}</small>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if talep.talep_onay.sofor %}
+                                {{ talep.talep_onay.sofor.ad_soyad }}<br>
+                                <small class="text-muted">{{ talep.talep_onay.sofor.telefon }}</small>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ talep.kisi_sayisi }}</td>
+                        <td>
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#detay{{ talep.id }}">
+                                Detaylar
+                            </button>
+                        </td>
+                        <td>
+   			    {% if talep.talep_onay.varis_saati %}
+        			{{ talep.talep_onay.varis_saati }}
+   			    {% else %}
+      				<span class="text-muted">Girilmedi</span>
+    			    {% endif %}
+			</td>
+                    </tr>
+
+                    <!-- Detay Satırı -->
+                    <tr class="collapse" id="detay{{ talep.id }}">
+                        <td colspan="10" class="text-start">
+                            <strong>Görev Açıklaması:</strong> {{ talep.gorev_aciklamasi|linebreaks }}<br>
+                            <strong>Ek Kişiler:</strong>
+                            {% if talep.ek_kisiler.exists %}
+                                <ul class="mb-0 ps-3">
+                                    {% for kisi in talep.ek_kisiler.all %}
+                                        <li>{{ kisi.ad_soyad }} - <span class="text-muted">{{ kisi.unvan }}</span></li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Yok</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Sayfalama -->
+        {% if talepler_gecmis.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if talepler_gecmis.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?sofor_sayfa={{ talepler_gecmis.previous_page_number }}#gecmis">« Önceki</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">« Önceki</span></li>
+                {% endif %}
+
+                {% for num in talepler_gecmis.paginator.page_range %}
+                    {% if num == talepler_gecmis.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?sofor_sayfa={{ num }}#gecmis">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if talepler_gecmis.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?sofor_sayfa={{ talepler_gecmis.next_page_number }}#gecmis">Sonraki »</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Sonraki »</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <p class="text-muted">Geçmiş görev bulunmamaktadır.</p>
+        {% endif %}
+    </div>
+</div>

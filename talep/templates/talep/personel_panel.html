@@ -1,0 +1,264 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Personel Paneli - Araç Talep</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-section-title {
+            font-weight: bold;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container-fluid px-4 py-3" style="max-width: 1350px;">
+
+    <!-- Üst Şeritli Logo ve Başlık -->
+    <div class="bg-danger text-white py-3 px-4 rounded shadow mb-4 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <img src="{% static 'talep/logo.png' %}" alt="Logo" style="height: 80px;" class="me-4">
+            <h2 class="mb-0 fw-bold">ARAÇ TALEP SİSTEMİ</h2>
+        </div>
+        <span class="fw-semibold">Personel Paneli</span>
+    </div>
+
+    <!-- Yatay Form -->
+    <div class="bg-white shadow p-4 rounded mb-5">
+        <h5 class="form-section-title mb-4">Araç Talep Formu</h5>
+        <form method="post" action="{% url 'personel_panel' %}">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-section-title">Ad Soyad</label>
+                    <input type="text" class="form-control" name="talep_eden_adsoyad" value="{{ ad_soyad }}" readonly>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-section-title">Bağlı Olduğu Başkanlık</label>
+                    {{ baskanlik_form.baskanlik }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-section-title">Birim</label>
+                    <input type="text" class="form-control" name="birim" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-section-title">Gidilecek İlçe</label>
+                    <select class="form-select" name="gidilecek_ilce" required>
+                        <option value="">İlçe Seçiniz</option>
+                        <option>Merkez</option>
+                        <option>Almus</option>
+                        <option>Artova</option>
+                        <option>Başçiftlik</option>
+                        <option>Erbaa</option>
+                        <option>Niksar</option>
+                        <option>Pazar</option>
+                        <option>Reşadiye</option>
+                        <option>Sulusaray</option>
+                        <option>Turhal</option>
+                        <option>Yeşilyurt</option>
+                        <option>Zile</option>
+                    </select>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-section-title">Görev Açıklaması</label>
+                    <textarea class="form-control" name="gorev_aciklamasi" rows="2" required></textarea>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-section-title">Kişi Sayısı</label>
+                    <select class="form-select" name="kisi_sayisi" id="kisi_sayisi" required>
+                        <option value="">Seçiniz</option>
+                        {% for i in kisi_sayilari %}
+                            <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-section-title">Gidiş Tarihi</label>
+                    <input type="date" class="form-control" name="gidis_tarihi" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-section-title">Gidiş Saati</label>
+                    <select class="form-select" name="gidis_saati" required>
+                        <option value="">Saat Seçiniz</option>
+                        {% for saat in saat_araligi %}
+                            <option value="{{ saat }}">{{ saat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="ek-kisi-alanlari" class="row"></div>
+
+            <button type="submit" class="btn btn-danger mt-3">Talep Oluştur</button>
+        </form>
+    </div>
+
+    <!-- Geçmiş Talepler -->
+    <div class="bg-white shadow p-4 rounded">
+        <h5 class="form-section-title mb-4">Geçmiş Taleplerim</h5>
+        <table class="table table-bordered align-middle">
+            <thead class="table-danger text-center">
+                <tr>
+                    <th>Talep Tarihi</th>
+                    <th>Gidiş Tarih / Saat</th>
+                    <th>Görev Açıklaması</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for talep in talepler %}
+                <tr>
+                    <td>{{ talep.talep_tarihi|date:"d.m.Y H:i" }}</td>
+                    <td>{{ talep.gidis_tarihi }} {{ talep.gidis_saati }}</td>
+                    <td>{{ talep.gorev_aciklamasi }}</td>
+                    <td>
+                        {% if talep.talep_onay %}
+                            {% if talep.talep_onay.durum == "ilk" %}
+                                <span class="badge bg-warning text-dark">Baş Şoför Onayı Bekliyor</span>
+                            {% elif talep.talep_onay.durum == "bekliyor" and talep.gidis_tarihi < today %}
+                                <span class="badge bg-secondary">Süresi Geçti</span>
+                            {% elif talep.talep_onay.durum == "bekliyor" %}
+                                <span class="badge bg-info text-dark">Yönetici Onayı Bekliyor</span>
+                            {% elif talep.talep_onay.durum == "onaylandi" %}
+                                <span class="badge bg-success">Onaylandı</span>
+                            {% elif talep.talep_onay.durum == "reddedildi" %}
+                                <span class="badge bg-danger">Reddedildi</span>
+                            {% elif talep.talep_onay.durum == "tamamlandi" %}
+                                <span class="badge bg-success">Görev Tamamlandı</span><br>
+                                <small class="text-muted">
+   				    Varış:
+   				    {% if talep.talep_onay.varis_saati %}
+       					{{ talep.talep_onay.varis_saati }}
+    				    {% else %}
+      				 	Girilmedi
+    			            {% endif %}
+				</small>
+
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-dark">Onay Başlatılmadı</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'talep_detay' talep.id %}" class="btn btn-outline-danger btn-sm">Detay</a>
+                        {% if talep.talep_onay and talep.talep_onay.durum == "ilk" %}
+                            <a href="{% url 'geri_cek' talep.id %}" class="btn btn-outline-secondary btn-sm ms-1">Geri Çek</a>
+                        {% elif talep.talep_onay and talep.talep_onay.durum == "onaylandi" and talep.gidis_tarihi > today %}
+                            <a href="{% url 'iptal_et' talep.id %}" class="btn btn-outline-warning btn-sm ms-1">İptal Et</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">Henüz talep bulunmamaktadır.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if talepler.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if talepler.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?sayfa={{ talepler.previous_page_number }}">« Önceki</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">« Önceki</span></li>
+                {% endif %}
+
+                {% for num in talepler.paginator.page_range %}
+                    {% if num == talepler.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?sayfa={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if talepler.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?sayfa={{ talepler.next_page_number }}">Sonraki »</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Sonraki »</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const kisiSayisiInput = document.getElementById('kisi_sayisi');
+    const ekKisiContainer = document.getElementById('ek-kisi-alanlari');
+
+    kisiSayisiInput.addEventListener("input", function () {
+        const sayi = parseInt(this.value) || 1;
+        ekKisiContainer.innerHTML = '';
+
+        for (let i = 1; i < sayi; i++) {
+            const div = document.createElement("div");
+            div.className = "col-md-6 mb-2";
+            div.innerHTML = `
+                <input type="text" class="form-control mb-1 ek-kisi-input" name="ek_ad[]" placeholder="Ek Kişi Ad Soyad" autocomplete="off">
+
+                <input type="text" class="form-control" name="ek_unvan[]" placeholder="Ek Kişi Unvan">
+            `;
+            ekKisiContainer.appendChild(div);
+        }
+    });
+});
+</script>
+
+<!-- GEREKLİ KÜTÜPHANELER -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+<!-- EK KİŞİ AUTOCOMPLETE SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const kisiSayisiInput = document.getElementById('kisi_sayisi');
+    const ekKisiContainer = document.getElementById('ek-kisi-alanlari');
+
+    kisiSayisiInput.addEventListener("input", function () {
+        const sayi = parseInt(this.value) || 1;
+        ekKisiContainer.innerHTML = '';
+
+        for (let i = 1; i < sayi; i++) {
+            const div = document.createElement("div");
+            div.className = "col-md-6 mb-2";
+            div.innerHTML = `
+                <input type="text" class="form-control ek-ad-input mb-1" name="ek_ad[]" placeholder="Ek Kişi Ad Soyad" autocomplete="off">
+                <input type="text" class="form-control" name="ek_unvan[]" placeholder="Ek Kişi Unvan">
+            `;
+            ekKisiContainer.appendChild(div);
+        }
+
+        setTimeout(() => {
+            $('.ek-ad-input').autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: "{% url 'kullanici_ara' %}",
+                        dataType: "json",
+                        data: { q: request.term },
+                        success: function (data) {
+                            response(data);
+                        }
+                    });
+                },
+                minLength: 2
+            });
+        }, 50);
+    });
+});
+</script>
+
+
+</body>
+</html>

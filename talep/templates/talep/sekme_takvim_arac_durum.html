@@ -1,0 +1,146 @@
+{% load custom_tags %}
+
+
+<div class="bg-white p-4 shadow rounded">
+    <h5 class="text-danger">Araç Durumu & Takvim</h5>
+
+    <!-- Takvim -->
+    <form method="get" id="tarih-form">
+        <input type="date" id="tarihSec" name="tarih" class="form-control w-auto mb-3" value="{{ secilen_tarih|date:'Y-m-d' }}">
+    </form>
+
+    <!-- Seçilen Günü Ait Görevler -->
+    <div id="gorevlerAlani">
+        {% if secilen_gorevler %}
+            <h6 class="mt-4 text-primary">Seçilen Günüdeki Görevler</h6>
+            <table class="table table-bordered align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>Talep Eden</th>
+                        <th>Gidiş Saati</th>
+                        <th>Araç</th>
+                        <th>Şoför</th>
+                        <th>Detay</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for talep in secilen_gorevler %}
+                    <tr>
+                        <td>{{ talep.talep_eden_adsoyad }}</td>
+                        <td>{{ talep.gidis_saati }}</td>
+                        <td>
+                            {{ talep.talep_onay.arac.plaka }}<br>
+                            <small class="text-muted">{{ talep.talep_onay.arac.marka_model }}</small>
+                        </td>
+                        <td>
+                            {{ talep.talep_onay.sofor.ad_soyad }}<br>
+                            <small class="text-muted">{{ talep.talep_onay.sofor.telefon }}</small>
+                        </td>
+                        <td>
+                            <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#detay{{ talep.id }}">
+                                Detaylar
+                            </button>
+                        </td>
+                        <td>
+                            {% if bugun_secildi and talep.gidis_saati < now %}
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#tamamlaModal{{ talep.id }}">
+                                    Görev Tamamlandı
+                                </button>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Detay Satırı -->
+                    <tr class="collapse bg-light" id="detay{{ talep.id }}">
+                        <td colspan="6" class="text-start">
+                            <strong>Görev Açıklaması:</strong> {{ talep.gorev_aciklamasi|linebreaks }}<br>
+                            <strong>Ek Kişiler:</strong>
+                            {% if talep.ek_kisiler.exists %}
+                                <ul class="mb-0 ps-3">
+                                    {% for kisi in talep.ek_kisiler.all %}
+                                        <li>{{ kisi.ad_soyad }} - <span class="text-muted">{{ kisi.unvan }}</span></li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Yok</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="tamamlaModal{{ talep.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <form method="post" action="{% url 'gorev_tamamla' talep.id %}">
+                                {% csrf_token %}
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Görev Tamamlanma Saati</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <label class="form-label">Varış Saati Seçin:</label>
+                                        <select name="varis_saati" class="form-select" required>
+                                            <option value="">Saat Seçiniz</option>
+                                            {% for saat in varis_saatleri_dict|get_item:talep.id %}
+                                                <option value="{{ saat }}">{{ saat }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-success">Onayla</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-muted">Seçilen tarihte görev bulunmamaktadır.</div>
+        {% endif %}
+    </div>
+
+    <!-- Müsait Araç ve Şoförler -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h6 class="text-success">Müsait Araçlar</h6>
+            <ul class="list-group">
+                {% for arac in musait_araclar %}
+                    <li class="list-group-item">{{ arac.plaka }} - {{ arac.marka_model }}</li>
+                {% empty %}
+                    <li class="list-group-item text-muted">Müsait araç yok</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h6 class="text-success">Müsait Şoförler</h6>
+            <ul class="list-group">
+                {% for sofor in musait_soforler %}
+                    <li class="list-group-item">{{ sofor.ad_soyad }} - {{ sofor.telefon }}</li>
+                {% empty %}
+                    <li class="list-group-item text-muted">Müsait şoför yok</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tarihInput = document.querySelector('#tarih-form input[name="tarih"]');
+    const form = document.getElementById('tarih-form');
+
+    if (tarihInput && form) {
+        tarihInput.addEventListener('change', function () {
+            const selectedDate = this.value;
+            const currentAction = window.location.pathname;
+            const newUrl = `${currentAction}?tarih=${selectedDate}#durumtakvim`;
+            window.location.href = newUrl;
+        });
+    }
+});
+</script>

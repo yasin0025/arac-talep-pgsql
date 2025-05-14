@@ -1,0 +1,82 @@
+{% if talepler_bekleyen %}
+    <table class="table table-bordered bg-white shadow align-middle text-center">
+        <thead class="table-danger">
+            <tr>
+                <th>Talep Eden</th>
+                <th>Başkanlık</th>
+                <th>Birim</th>
+                <th>Gidilecek İlçe</th>
+                <th>Gidiş Tarihi</th>
+                <th>Kişi Sayısı</th>
+                <th>İşlem</th>
+                <th>Detay</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for talep in talepler_bekleyen %}
+            <!-- Ana Satır -->
+            <tr>
+                <td>{{ talep.talep_eden_adsoyad }}</td>
+                <td>{{ talep.get_baskanlik_display }}</td>
+                <td>{{ talep.birim }}</td>
+                <td>{{ talep.gidilecek_ilce }}</td>
+                <td>{{ talep.gidis_tarihi }} {{ talep.gidis_saati }}</td>
+                <td>{{ talep.kisi_sayisi }}</td>
+                <td>
+                    <a href="{% url 'bas_sofor_onayla' talep.id %}" class="btn btn-sm btn-success">Onayla</a>
+                    <button class="btn btn-sm btn-danger mt-1" data-bs-toggle="modal" data-bs-target="#reddetModal{{ talep.id }}">
+                        Reddet
+                    </button>
+
+                    <!-- Reddet Modal -->
+                    <div class="modal fade" id="reddetModal{{ talep.id }}" tabindex="-1">
+                      <div class="modal-dialog">
+                        <form method="post" action="{% url 'bas_sofor_reddet' talep.id %}">
+                          {% csrf_token %}
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title">Red Açıklaması</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                              <textarea name="aciklama" class="form-control" required placeholder="Red sebebini giriniz..."></textarea>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="submit" class="btn btn-danger">Reddet</button>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-outline-secondary btn-sm"
+                            type="button" data-bs-toggle="collapse"
+                            data-bs-target="#detay{{ talep.id }}">
+                        Detaylar
+                    </button>
+                </td>
+            </tr>
+
+            <!-- Açılır Detay Satırı -->
+            <tr class="collapse bg-light" id="detay{{ talep.id }}">
+                <td colspan="8" class="text-start">
+                    <strong>Görev Açıklaması:</strong> {{ talep.gorev_aciklamasi|linebreaks }}<br>
+                    <strong>Ek Kişiler:</strong>
+                    {% if talep.ek_kisiler.all %}
+                        <ul class="mb-0 ps-3">
+                            {% for kisi in talep.ek_kisiler.all %}
+                                <li>{{ kisi.ad_soyad }} <small class="text-muted">({{ kisi.unvan }})</small></li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <span class="text-muted">Yok</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="alert alert-warning">Bekleyen herhangi bir talep bulunmamaktadır.</div>
+{% endif %}

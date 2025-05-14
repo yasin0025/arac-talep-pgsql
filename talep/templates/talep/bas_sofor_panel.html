@@ -1,0 +1,106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Baş Şoför Paneli</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .nav-tabs .nav-link {
+            font-weight: 500;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #dc3545;
+            color: white !important;
+            border-color: #dc3545;
+        }
+        .tab-content > .tab-pane {
+            display: none;
+        }
+        .tab-content > .active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4 py-3" style="max-width: 1350px;">
+
+    <!-- Üst Şeritli Logo ve Başlık -->
+    <div class="bg-danger text-white py-3 px-4 rounded shadow mb-4 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <img src="{% static 'talep/logo.png' %}" alt="Logo" style="height: 80px;" class="me-4">
+            <h2 class="mb-0 fw-bold">ARAÇ TALEP SİSTEMİ</h2>
+        </div>
+        <span class="fw-semibold">Baş Şoför Paneli</span>
+    </div>
+
+    <!-- Sekmeler -->
+    <ul class="nav nav-tabs" id="tabMenu">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#bekleyen">Bekleyen Talepler</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#mudur">Yönetici Onayı Bekleyenler</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#gecmis">Geçmiş Görevler</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#durumtakvim">Araç Durumu & Takvim</a>
+        </li>
+    </ul>
+
+    <!-- Sekme İçerikleri -->
+    <div class="tab-content mt-4 bg-white p-4 rounded shadow-sm">
+        <div class="tab-pane active" id="bekleyen">
+            {% include 'talep/sekme_bekleyen_talepler.html' %}
+        </div>
+        <div class="tab-pane" id="mudur">
+            {% include 'talep/sekme_mudur_onayi.html' %}
+        </div>
+        <div class="tab-pane" id="gecmis">
+            {% include 'talep/sekme_gecmis_gorevler.html' %}
+        </div>
+        <div class="tab-pane" id="durumtakvim">
+            {% include 'talep/sekme_takvim_arac_durum.html' %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const hash = window.location.hash;
+    if (hash) {
+        const activeTab = document.querySelector(`a[href="${hash}"]`);
+        if (activeTab) {
+            new bootstrap.Tab(activeTab).show();
+        }
+
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+        });
+        const activePane = document.querySelector(hash);
+        if (activePane) {
+            activePane.classList.add('active');
+        }
+    }
+
+    document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(link => {
+        link.addEventListener('shown.bs.tab', function (e) {
+            const selectedTabId = e.target.getAttribute('href');
+            history.replaceState(null, null, selectedTabId);
+        });
+    });
+});
+</script>
+
+</body>
+</html>
