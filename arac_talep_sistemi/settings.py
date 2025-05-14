@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-=!)zsegg+ars@@iadbz7kr8hs-o(-19x@c2oo#x!uym-^+73z6
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'arac-talep-sistemi.onrender.com']
 
 
 # Uygulamalar
