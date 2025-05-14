@@ -91,3 +91,5 @@ STATICFILES_DIRS = [
 # Varsayılan primary key alanı
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
