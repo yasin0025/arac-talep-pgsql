@@ -35,7 +35,8 @@
                         <th>Şoför</th>
                         <th>Kişi</th>
                         <th>Detay</th>
-                        <th>Varış Saati</th>
+                        <th>Varış</th>
+                        <th>Tarihçe</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,18 +71,62 @@
                             </button>
                         </td>
                         <td>
-   		            {% if talep.talep_onay.varis_saati %}
-       				{{ talep.talep_onay.varis_saati }}
-   			    {% else %}
-        			<span class="text-muted">Girilmedi</span>
-   			    {% endif %}
-			</td>
+                            {% if talep.talep_onay.varis_saati %}
+                                {{ talep.talep_onay.varis_saati }}
+                            {% else %}
+                                <span class="text-muted">Girilmedi</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Tarihçe Butonu -->
+                            <button class="btn btn-outline-dark btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#tarihceModal{{ talep.id }}">
+                                🕓 Tarihçe
+                            </button>
 
+                            <!-- Modal -->
+                            <div class="modal fade" id="tarihceModal{{ talep.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-scrollable">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">Görev Tarihçesi</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item">
+                                                    Talep Oluşturuldu: {{ talep.talep_tarihi|date:"d.m.Y H:i" }}
+                                                </li>
+                                                {% if talep.uzman_onay_tarihi %}
+                                                <li class="list-group-item">
+                                                    Uzman {{ talep.uzman_onaylayan.userprofile.adsoyad }} onayladı:
+                                                    {{ talep.uzman_onay_tarihi|date:"d.m.Y H:i" }}
+                                                </li>
+                                                {% endif %}
+                                                {% if talep.talep_onay and talep.talep_onay.atama_tarihi %}
+                                                <li class="list-group-item">
+                                                    Baş Şoför atama yaptı:
+                                                    {{ talep.talep_onay.atama_tarihi|date:"d.m.Y H:i" }}
+                                                </li>
+                                                {% endif %}
+                                                {% if talep.talep_onay and talep.talep_onay.yonetici_onay_tarihi %}
+                                                <li class="list-group-item">
+                                                    Yönetici onayı:
+                                                    {{ talep.talep_onay.yonetici_onay_tarihi|date:"d.m.Y H:i" }}
+                                                </li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
 
                     <!-- Detay Satırı -->
                     <tr class="collapse" id="detay{{ talep.id }}">
-                        <td colspan="10" class="text-start">
+                        <td colspan="11" class="text-start">
                             <strong>Görev Açıklaması:</strong> {{ talep.gorev_aciklamasi|linebreaks }}<br>
                             <strong>Ek Kişiler:</strong>
                             {% if talep.ek_kisiler.exists %}

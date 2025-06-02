@@ -1,0 +1,94 @@
+<div class="card shadow-sm mt-4">
+    <div class="bg-danger text-white px-3 py-2 rounded-top d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Şoför Görevleri</h5>
+
+        {% if filtrelenmis_gorevler %}
+        <a href="{% url 'sofor_gorev_pdf' %}?sofor={{ request.GET.sofor }}&baslangic={{ request.GET.baslangic }}&bitis={{ request.GET.bitis }}"
+           class="btn btn-light text-danger fw-semibold border border-white"
+           target="_blank">
+            📄 PDF Oluştur
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="p-4 bg-white rounded-bottom">
+        <!-- Filtre Formu -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Başlangıç Tarihi</label>
+                <input type="date" name="baslangic" class="form-control" value="{{ request.GET.baslangic }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Bitiş Tarihi</label>
+                <input type="date" name="bitis" class="form-control" value="{{ request.GET.bitis }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Şoför Seç</label>
+                <select name="sofor" class="form-select">
+                    <option value="">-- Şoför Seçin --</option>
+                    {% for s in soforler %}
+                        <option value="{{ s.id }}" {% if request.GET.sofor == s.id|stringformat:"s" %}selected{% endif %}>
+                            {{ s.ad_soyad }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-danger w-100">Filtrele</button>
+            </div>
+        </form>
+
+        {% if filtrelenmis_gorevler %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center table-striped-custom">
+                <thead class="table-light">
+                    <tr>
+                        <th>Gidiş Tarih/Saat</th>
+                        <th>Talep Eden</th>
+                        <th>Bşk./Birim</th>
+                        <th>İlçe</th>
+                        <th>Araç</th>
+                        <th>Şoför</th>
+                        <th>Kişi</th>
+                        <th>Varış Saati</th>
+                        <th>Görev Açıklaması</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gorev in filtrelenmis_gorevler %}
+                    <tr>
+                        <td>{{ gorev.talep.gidis_tarihi }}<br><small class="text-muted">{{ gorev.talep.gidis_saati }}</small></td>
+                        <td>{{ gorev.talep.talep_eden_adsoyad }}</td>
+                        <td>{{ gorev.talep.get_baskanlik_display }}/{{ gorev.talep.birim }}</td>
+                        <td>{{ gorev.talep.gidilecek_ilce }}</td>
+                        <td>{{ gorev.arac.plaka }}<br><small class="text-muted">{{ gorev.arac.marka_model }}</small></td>
+                        <td>{{ gorev.sofor.ad_soyad }}</td>
+                        <td>{{ gorev.talep.kisi_sayisi }}</td>
+                        <td>
+                            {% if gorev.varis_saati %}
+                                {{ gorev.varis_saati }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-start">{{ gorev.talep.gorev_aciklamasi|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% elif request.GET.sofor %}
+        <p class="text-muted">Seçilen tarihlerde bu şoföre ait görev bulunamadı.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.table-striped-custom tbody tr:nth-child(odd) {
+    background-color: #f9f9f9;
+}
+.table-striped-custom tbody tr:hover {
+    background-color: #f1f1f1;
+    cursor: pointer;
+}
+</style>

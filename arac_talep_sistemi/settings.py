@@ -53,12 +53,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'arac_talep_sistemi.wsgi.application'
 
 # Veritabanı
-DATABASES = {
+DATABASES = DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'arac_talep_db',
+        'USER': 'postgres',
+        'PASSWORD': '12345678',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
+
 
 # Şifre güvenlik kuralları
 AUTH_PASSWORD_VALIDATORS = [

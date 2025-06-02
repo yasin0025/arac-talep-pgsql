@@ -1,0 +1,149 @@
+<!-- ÖZEL STİL -->
+<style>
+    .table-striped-custom tbody tr:nth-child(odd) {
+        background-color: #f9f9f9;
+    }
+
+    .table-striped-custom tbody tr:hover {
+        background-color: #f1f1f1;
+        cursor: pointer;
+    }
+
+    .table-striped-custom .collapse {
+        background-color: #f8f9fa !important;
+    }
+</style>
+
+<!-- KART GÖVDE -->
+<div class="card shadow-sm mt-4">
+    <div class="bg-danger text-white px-3 py-2 rounded-top">
+        <h5 class="mb-0">Geçmiş Görevler</h5>
+    </div>
+
+    <div class="p-4 bg-white rounded-bottom">
+        {% if gecmis_talepler %}
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered align-middle text-center table-striped-custom">
+                <thead class="table-light">
+                    <tr>
+                        <th>Talep Eden</th>
+                        <th>Başkanlık</th>
+                        <th>Birim</th>
+                        <th>İlçe</th>
+                        <th>Gidiş</th>
+                        <th>Araç</th>
+                        <th>Şoför</th>
+                        <th>Kişi</th>
+                        <th>Detay</th>
+                        <th>Varış Saati</th>
+                        <th>Tarihçe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for talep in gecmis_talepler %}
+                    <tr>
+                        <td>{{ talep.talep_eden_adsoyad }}</td>
+                        <td>{{ talep.get_baskanlik_display }}</td>
+                        <td>{{ talep.birim }}</td>
+                        <td>{{ talep.gidilecek_ilce }}</td>
+                        <td>
+                            {{ talep.gidis_tarihi }}<br>
+                            <small class="text-muted">{{ talep.gidis_saati }}</small>
+                        </td>
+                        <td>
+                            {% if talep.talep_onay.arac %}
+                                {{ talep.talep_onay.arac.plaka }}<br>
+                                <small class="text-muted">{{ talep.talep_onay.arac.marka_model }}</small>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if talep.talep_onay.sofor %}
+                                {{ talep.talep_onay.sofor.ad_soyad }}<br>
+                                <small class="text-muted">{{ talep.talep_onay.sofor.telefon }}</small>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ talep.kisi_sayisi }}</td>
+                        <td>
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#detay{{ talep.id }}">
+                                Detaylar
+                            </button>
+                        </td>
+                        <td>
+                            {% if talep.talep_onay.varis_saati %}
+                                {{ talep.talep_onay.varis_saati }}
+                            {% else %}
+                                <span class="text-muted">Girilmedi</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button type="button"
+                                    class="btn btn-outline-dark btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#tarihceModal{{ talep.id }}">
+                                🕓
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Modal Tarihçe -->
+                    <div class="modal fade" id="tarihceModal{{ talep.id }}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-scrollable">
+                        <div class="modal-content">
+                          <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">Görev Tarihçesi</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                          </div>
+                          <div class="modal-body">
+                            <ul class="list-group list-group-flush">
+                              <li class="list-group-item">
+                                Talep Oluşturuldu: {{ talep.talep_tarihi|date:"d.m.Y H:i" }}
+                              </li>
+                              {% if talep.uzman_onay_tarihi %}
+                              <li class="list-group-item">
+                                Uzman {{ talep.uzman_onaylayan.userprofile.adsoyad }} onayladı:
+                                {{ talep.uzman_onay_tarihi|date:"d.m.Y H:i" }}
+                              </li>
+                              {% endif %}
+                              {% if talep.talep_onay and talep.talep_onay.atama_tarihi %}
+                              <li class="list-group-item">
+                                Baş Şoför atama yaptı: {{ talep.talep_onay.atama_tarihi|date:"d.m.Y H:i" }}
+                              </li>
+                              {% endif %}
+                              {% if talep.talep_onay and talep.talep_onay.yonetici_onay_tarihi %}
+                              <li class="list-group-item">
+                                Yönetici onayı: {{ talep.talep_onay.yonetici_onay_tarihi|date:"d.m.Y H:i" }}
+                              </li>
+                              {% endif %}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Detay Satırı -->
+                    <tr class="collapse" id="detay{{ talep.id }}">
+                        <td colspan="11" class="text-start">
+                            <strong>Görev Açıklaması:</strong> {{ talep.gorev_aciklamasi|linebreaks }}<br>
+                            <strong>Ek Kişiler:</strong>
+                            {% if talep.ek_kisiler.exists %}
+                                <ul class="mb-0 ps-3">
+                                    {% for kisi in talep.ek_kisiler.all %}
+                                        <li>{{ kisi.ad_soyad }} - <span class="text-muted">{{ kisi.unvan }}</span></li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Yok</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">Geçmiş görev kaydı bulunmamaktadır.</p>
+        {% endif %}
+    </div>
+</div>

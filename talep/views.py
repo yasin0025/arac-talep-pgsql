@@ -18,6 +18,8 @@ from django.utils.timezone import make_aware
 from django.core.paginator import Paginator
 from datetime import datetime, date, time, timedelta
 from django.http import JsonResponse
+from django.contrib.auth.models import User
+from .models import Gorev
 
 @require_POST
 @login_required
@@ -43,38 +45,70 @@ def bas_sofor_reddet(request, talep_id):
     messages.success(request, "Talep reddedildi.")
     return redirect('bas_sofor_panel')
 
-@login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.utils import timezone
+from django.db.models import Q
+from datetime import datetime, time, timedelta
+from .models import AracTalep, EkKisiBilgisi, UserProfile
+from .forms import BaskanlikForm
+from django.contrib.auth.models import User
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Q
+from django.core.paginator import Paginator
+from datetime import datetime, time, timedelta
+from .models import AracTalep, EkKisiBilgisi, UserProfile
+from .forms import BaskanlikForm
+from django.contrib.auth.models import User
+
 def personel_panel(request):
     user_profile = get_object_or_404(UserProfile, user=request.user)
     ad_soyad = user_profile.adsoyad
+    sekme = request.GET.get("sekme", "talepler")
 
+    # Saat aralığı oluştur
     saat_baslangic = time(8, 0)
     saat_bitis = time(17, 0)
     adim = timedelta(minutes=15)
     saat_araligi = []
-
     current = datetime.combine(datetime.today(), saat_baslangic)
     end = datetime.combine(datetime.today(), saat_bitis)
     while current <= end:
         saat_araligi.append(current.time().strftime("%H:%M"))
         current += adim
 
-    if request.method == 'POST':
-        baskanlik_form = BaskanlikForm(request.POST)
-        if baskanlik_form.is_valid():
-            talep_eden_adsoyad = ad_soyad
-            baskanlik = baskanlik_form.cleaned_data['baskanlik']
-            birim = request.POST.get('birim')
-            gidilecek_ilce = request.POST.get('gidilecek_ilce')
-            gorev_aciklamasi = request.POST.get('gorev_aciklamasi')
-            kisi_sayisi = int(request.POST.get('kisi_sayisi'))
-            gidis_tarihi = request.POST.get('gidis_tarihi')
-            gidis_saati_str = request.POST.get('gidis_saati')
+    # Talep oluşturma işlemi
+    if request.method == "POST":
+        try:
+            uzman_id = request.POST.get("uzman_onaylayan_id")
+            uzman_kisi = User.objects.get(id=uzman_id) if uzman_id else None
+
+            baskanlik = request.POST.get("baskanlik")
+            birim = request.POST.get("birim")
+            gidilecek_ilce = request.POST.get("gidilecek_ilce")
+            gorev_aciklamasi = request.POST.get("gorev_aciklamasi")
+            kisi_sayisi = request.POST.get("kisi_sayisi")
+            gidis_tarihi = request.POST.get("gidis_tarihi")
+            gidis_saati_str = request.POST.get("gidis_saati")
+
+            if not all([baskanlik, birim, gidilecek_ilce, gorev_aciklamasi, kisi_sayisi, gidis_tarihi, gidis_saati_str]):
+                messages.error(request, "Lütfen tüm form alanlarını eksiksiz doldurunuz.")
+                return redirect('personel_panel')
+
+            gidis_datetime = timezone.make_aware(datetime.strptime(f"{gidis_tarihi} {gidis_saati_str}", "%Y-%m-%d %H:%M"))
+            if gidis_datetime < timezone.now():
+                messages.error(request, "Geçmiş tarih ve saat için talep oluşturamazsınız.")
+                return redirect('personel_panel')
+
             gidis_saati = datetime.strptime(gidis_saati_str, "%H:%M").time()
 
             talep = AracTalep.objects.create(
                 talep_eden=request.user,
-                talep_eden_adsoyad=talep_eden_adsoyad,
+                talep_eden_adsoyad=ad_soyad,
                 baskanlik=baskanlik,
                 birim=birim,
                 gidilecek_ilce=gidilecek_ilce,
@@ -82,13 +116,12 @@ def personel_panel(request):
                 kisi_sayisi=kisi_sayisi,
                 gidis_tarihi=gidis_tarihi,
                 gidis_saati=gidis_saati,
+                uzman_onaylayan=uzman_kisi,
+                uzman_onay_durumu="bekliyor"
             )
-
-            TalepOnay.objects.create(talep=talep, durum='ilk')
 
             ek_ad_list = request.POST.getlist('ek_ad[]')
             ek_unvan_list = request.POST.getlist('ek_unvan[]')
-
             for ad, unvan in zip(ek_ad_list, ek_unvan_list):
                 if ad.strip():
                     matched_profile = UserProfile.objects.filter(adsoyad=ad.strip()).select_related("user").first()
@@ -99,19 +132,39 @@ def personel_panel(request):
                         user=matched_profile.user if matched_profile else None
                     )
 
+            messages.success(request, "Talebiniz başarıyla oluşturuldu.")
             return redirect('personel_panel')
+
+        except Exception as e:
+            messages.error(request, f"Hata oluştu: {str(e)}")
+            return redirect('personel_panel')
+
     else:
         baskanlik_form = BaskanlikForm()
 
     today = timezone.now().date()
+
+    # Geçmiş ve aktif talepler listesi
     tum_talepler = AracTalep.objects.filter(
-    Q(talep_eden=request.user) |
-    Q(ek_kisiler__user=request.user)
-).prefetch_related('talep_onay').distinct().order_by('-talep_tarihi')
+        Q(talep_eden=request.user) | Q(ek_kisiler__user=request.user)
+    ).prefetch_related('talep_onay', 'ek_kisiler').distinct().order_by('-talep_tarihi')
 
     paginator = Paginator(tum_talepler, 8)
     sayfa_numarasi = request.GET.get('sayfa')
     talepler = paginator.get_page(sayfa_numarasi)
+
+    uzmanlar = User.objects.filter(userprofile__rol='uzman')
+
+    # Raporlama sekmesi: sadece tamamlananlar
+    raporlar = None
+    bas = request.GET.get("baslangic")
+    bit = request.GET.get("bitis")
+    if sekme == "rapor" and bas and bit:
+        raporlar = AracTalep.objects.filter(
+            Q(talep_eden=request.user) | Q(ek_kisiler__user=request.user),
+            gidis_tarihi__range=[bas, bit],
+            talep_onay__durum='tamamlandi'
+        ).prefetch_related('talep_onay', 'ek_kisiler').distinct().order_by('-gidis_tarihi')
 
     return render(request, 'talep/personel_panel.html', {
         'ad_soyad': ad_soyad,
@@ -121,7 +174,15 @@ def personel_panel(request):
         'today': today,
         'kisi_sayilari': range(1, 16),
         'paginator': paginator,
+        'uzmanlar': uzmanlar,
+        'sekme': sekme,
+        'raporlar': raporlar,
     })
+
+
+
+
+
 
 
 
@@ -152,20 +213,43 @@ def talep_detay(request, talep_id):
 @login_required
 def geri_cek(request, talep_id):
     talep = get_object_or_404(AracTalep, id=talep_id, talep_eden=request.user)
-    if not hasattr(talep, 'talep_onay'):
-        talep.delete()
-    return redirect('personel_panel')
 
+    # Uzman henüz onaylamamışsa (bekliyor) → geri çekilebilir
+    if talep.uzman_onay_durumu == "bekliyor":
+        talep.delete()
+        return redirect('personel_panel')
+
+    # Uzman onayladıysa ama baş şoför henüz onaylamadıysa → geri çekilebilir
+    if hasattr(talep, 'talep_onay') and talep.talep_onay.durum == "ilk":
+        talep.talep_onay.delete()
+        talep.delete()
+        return redirect('personel_panel')
+
+    # Diğer durumlarda izin verilmesin
+    return HttpResponseForbidden("Bu talep artık geri çekilemez.")
+
+
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+
+@require_POST
 @login_required
 def iptal_et(request, talep_id):
     talep = get_object_or_404(AracTalep, id=talep_id, talep_eden=request.user)
     if hasattr(talep, 'talep_onay'):
         onay = talep.talep_onay
         if onay.durum == 'onaylandi' and talep.gidis_tarihi > timezone.now().date():
-            onay.durum = 'reddedildi'
+            onay.durum = 'iptal'  # ✅ Doğru durum bu
             onay.aciklama = 'Talep sahibi tarafından iptal edildi.'
             onay.save()
+            messages.success(request, "Talep başarıyla iptal edildi.")
+        else:
+            messages.warning(request, "Bu talep iptal edilemez.")
+    else:
+        messages.error(request, "Onay bilgisi bulunamadı.")
     return redirect('personel_panel')
+
 
 @login_required
 def taleplerim(request):
@@ -192,9 +276,14 @@ def login_view(request):
                 return redirect('bas_sofor_panel')
             elif profile.rol == 'mudur':
                 return redirect('mudur_panel')
+            elif profile.rol == 'uzman':
+                return redirect('uzman_panel')  # ✅ BU SATIRI EKLEDİK
+
         else:
             messages.error(request, "Geçersiz kullanıcı adı veya parola.")
+
     return render(request, 'talep/login.html')
+
 
 from datetime import datetime
 
@@ -274,6 +363,27 @@ def bas_sofor_panel(request):
             current += timedelta(minutes=15)
         varis_saatleri_dict[talep.id] = saat_listesi
 
+    # ✅ Şoför Görevleri Sekmesi (tarih aralığı + şoför filtresi)
+    soforler = Sofor.objects.all()
+    sofor_id = request.GET.get("sofor")
+    baslangic_str = request.GET.get("baslangic")
+    bitis_str = request.GET.get("bitis")
+
+    filtrelenmis_gorevler = []
+    try:
+        baslangic = datetime.strptime(baslangic_str, "%Y-%m-%d").date()
+        bitis = datetime.strptime(bitis_str, "%Y-%m-%d").date()
+        if sofor_id:
+            filtrelenmis_gorevler = TalepOnay.objects.select_related(
+                "talep", "arac", "sofor"
+            ).filter(
+                sofor_id=sofor_id,
+                talep__gidis_tarihi__range=[baslangic, bitis],
+                durum__in=["onaylandi", "tamamlandi"]
+            ).order_by("talep__gidis_tarihi")
+    except (ValueError, TypeError):
+        filtrelenmis_gorevler = []
+
     return render(request, 'talep/bas_sofor_panel.html', {
         'talepler_bekleyen': talepler_bekleyen,
         'talepler_mudur': talepler_mudur,
@@ -286,7 +396,10 @@ def bas_sofor_panel(request):
         'now': now_dt.time(),
         'secilen_tarih': secilen_tarih,
         'varis_saatleri_dict': varis_saatleri_dict,
+        'soforler': soforler,
+        'filtrelenmis_gorevler': filtrelenmis_gorevler,
     })
+
 
 
 @login_required
@@ -308,6 +421,7 @@ def bas_sofor_onayla(request, talep_id):
         onay.sofor = sofor
         onay.durum = 'bekliyor'
         onay.onay_tarihi = timezone.now()
+        onay.atama_tarihi = timezone.now()
         onay.save()
 
         return redirect('bas_sofor_panel')
@@ -384,7 +498,7 @@ def mudur_panel(request):
     sayfa = request.GET.get('mudur_sayfa')
     talepler_gecmis = paginator.get_page(sayfa)
 
-    # Görevler
+    # Bugünkü görevler
     bugunku_gorevler = TalepOnay.objects.select_related('talep', 'talep__talep_eden', 'arac', 'sofor') \
         .filter(durum='onaylandi', talep__gidis_tarihi=secilen_tarih)
 
@@ -394,6 +508,28 @@ def mudur_panel(request):
     atanan_soforler = bugunku_gorevler.values_list('sofor_id', flat=True)
     musait_soforler = Sofor.objects.exclude(id__in=atanan_soforler)
 
+    # ✅ Şoför Görevleri Sekmesi için filtre
+    soforler = Sofor.objects.all()
+    sofor_id = request.GET.get("sofor")
+    baslangic_str = request.GET.get("baslangic")
+    bitis_str = request.GET.get("bitis")
+
+    filtrelenmis_gorevler = []
+    try:
+        if sofor_id and baslangic_str and bitis_str:
+            baslangic = datetime.strptime(baslangic_str, "%Y-%m-%d").date()
+            bitis = datetime.strptime(bitis_str, "%Y-%m-%d").date()
+
+            filtrelenmis_gorevler = TalepOnay.objects.select_related(
+                "talep", "arac", "sofor"
+            ).filter(
+                sofor_id=sofor_id,
+                talep__gidis_tarihi__range=[baslangic, bitis],
+                durum__in=["onaylandi", "tamamlandi"]
+            ).order_by("talep__gidis_tarihi")
+    except (ValueError, TypeError):
+        filtrelenmis_gorevler = []
+
     return render(request, 'talep/mudur_panel.html', {
         'talepler_mudur': talepler_mudur,
         'talepler_gecmis': talepler_gecmis,
@@ -402,7 +538,11 @@ def mudur_panel(request):
         'musait_soforler': musait_soforler,
         'today': today,
         'secilen_tarih': secilen_tarih,
+        'soforler': soforler,
+        'filtrelenmis_gorevler': filtrelenmis_gorevler,
     })
+
+
 
 
 
@@ -454,13 +594,13 @@ def gorev_tamamla(request, talep_id):
 @login_required
 def geri_cek(request, talep_id):
     talep = get_object_or_404(AracTalep, id=talep_id, talep_eden=request.user)
-    try:
-        onay = talep.talep_onay
-        if onay.durum == 'ilk':
-            onay.delete()
-            talep.delete()
-    except TalepOnay.DoesNotExist:
+
+    # Sadece uzman henüz onaylamamışsa geri çekilebilir
+    if talep.uzman_onay_durumu == "bekliyor" and not hasattr(talep, 'talep_onay'):
         talep.delete()
+        messages.success(request, "Talep başarıyla geri çekildi.")
+    else:
+        messages.error(request, "Bu talep geri çekilemez.")
 
     return redirect('personel_panel')
 from django.views.decorators.http import require_POST
@@ -476,10 +616,14 @@ def mudur_onayla(request, talep_id):
     talep = get_object_or_404(AracTalep, id=talep_id)
     onay = talep.talep_onay
     onay.durum = 'onaylandi'
+    onay.onay_tarihi = timezone.now()
+    onay.yonetici_onay_tarihi = timezone.now()  # 👈 Bu satır tamamen doğru
     onay.save()
 
     messages.success(request, "Talep onaylandı.")
     return redirect('mudur_panel')
+
+
 from datetime import time
 
 def filtreli_varis_saatleri(gidis_saati):
@@ -676,8 +820,218 @@ def analiz_bos_saat_panel(request):
     }
 
     return render(request, "talep/analiz_bos_saat.html", context)
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import datetime
+from talep.models import AracTalep, TalepOnay, Arac, Sofor
+from django.db.models import Q
+
+@login_required
+def uzman_panel(request):
+    if request.user.userprofile.rol != 'uzman':
+        return render(request, 'yetkisiz.html')
+
+    bugun = timezone.now().date()
+    aktif_sekme = request.GET.get("sekme", "bekleyen")
+
+    # 1. Bekleyen Talepler (uzmanın onaylaması gerekenler)
+    bekleyen_talepler = AracTalep.objects.filter(
+        uzman_onaylayan=request.user,
+        uzman_onay_durumu='bekliyor'
+    ).order_by('-talep_tarihi')
+
+    # 2. Geçmiş Görevler (uzmanın onayladığı ve görev tamamlananlar)
+    gecmis_talepler = AracTalep.objects.filter(
+        uzman_onaylayan=request.user,
+        uzman_onay_durumu='onaylandi',
+        talep_onay__durum='tamamlandi'
+    ).order_by('-gidis_tarihi')
+
+    # 3. Takvim ve Araç Durumu Sekmesi
+    secilen_tarih_str = request.GET.get('tarih')
+    try:
+        secilen_tarih = datetime.strptime(secilen_tarih_str, "%Y-%m-%d").date() if secilen_tarih_str else bugun
+    except:
+        secilen_tarih = bugun
+
+    # Seçilen tarihteki onaylanmış görevler
+    bugunku_gorevler = TalepOnay.objects.select_related(
+        'talep', 'talep__talep_eden', 'arac', 'sofor'
+    ).filter(
+        durum='onaylandi',
+        talep__gidis_tarihi=secilen_tarih
+    )
+
+    # Görevde olan araç ve şoför ID'leri (yalnızca o tarihteki görevler)
+    atanan_arac_idleri = bugunku_gorevler.values_list('arac_id', flat=True)
+    atanan_sofor_idleri = bugunku_gorevler.values_list('sofor_id', flat=True)
+
+    # Müsait araç ve şoförler (görevde olmayanlar)
+    musait_araclar = Arac.objects.exclude(id__in=atanan_arac_idleri)
+    musait_soforler = Sofor.objects.exclude(id__in=atanan_sofor_idleri)
+
+    context = {
+        'bekleyen_talepler': bekleyen_talepler,
+        'gecmis_talepler': gecmis_talepler,
+        'bugunku_gorevler': bugunku_gorevler,
+        'musait_araclar': musait_araclar,
+        'musait_soforler': musait_soforler,
+        'secilen_tarih': secilen_tarih,
+        'aktif_sekme': aktif_sekme,
+        'talepler_uzman': bekleyen_talepler,  # şablonlarda eski kullanım için yedek
+    }
+
+    return render(request, 'talep/uzman_panel.html', context)
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from talep.models import AracTalep, TalepOnay
+
+@login_required
+def uzman_onayla(request, talep_id):
+    if request.method == "POST":
+        talep = get_object_or_404(AracTalep, id=talep_id)
+
+        if talep.uzman_onaylayan != request.user:
+            messages.error(request, "Bu talebi onaylama yetkiniz yok.")
+            return redirect('uzman_panel')
+
+        # Uzman onayını işaretle
+        talep.uzman_onay_durumu = "onaylandi"
+        talep.uzman_onay_tarihi = timezone.now()
+        talep.save()
+
+        # Baş şoför sürecini başlatmak için TalepOnay kaydı oluştur veya varsa güncelle
+        talep_onay, created = TalepOnay.objects.get_or_create(talep=talep)
+        talep_onay.durum = "ilk"  # baş şoför onayı bekliyor
+        talep_onay.save()
+
+        messages.success(request, "Talep başarıyla onaylandı. Baş şoföre gönderildi.")
+        return redirect('uzman_panel')
+
+
+@require_POST
+@login_required
+def uzman_reddet(request, talep_id):
+    talep = get_object_or_404(AracTalep, id=talep_id)
+    if request.user == talep.uzman_onaylayan:
+        aciklama = request.POST.get("aciklama", "")
+        talep.uzman_onay_durumu = "reddedildi"
+        talep.uzman_red_aciklama = aciklama
+        talep.save()
+    return redirect("uzman_panel")
+from django.views.decorators.http import require_POST
+
+@require_POST
+@login_required
+def mudur_iptal_et(request, talep_id):
+    # Yalnızca müdür kullanıcılar işlem yapabilsin
+    if request.user.userprofile.rol != 'mudur':
+        return HttpResponse("Yetkiniz yok.", status=403)
+
+    talep = get_object_or_404(AracTalep, id=talep_id)
+
+    try:
+        onay = talep.talep_onay
+        aciklama = request.POST.get("iptal_aciklama", "").strip()
+
+        if not aciklama:
+            return HttpResponse("İptal gerekçesi zorunludur.", status=400)
+
+        onay.durum = "iptal"
+        onay.aciklama = aciklama
+        onay.save()
+
+        # Araç ve şoför tekrar müsait yapılıyor
+        if onay.arac:
+            onay.arac.durum = "müsait"
+            onay.arac.save()
+        if onay.sofor:
+            onay.sofor.durum = "müsait"
+            onay.sofor.save()
+
+        messages.success(request, "Görev başarıyla iptal edildi.")
+    except:
+        messages.error(request, "Görev iptali sırasında hata oluştu.")
+
+    return redirect('mudur_panel')
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from weasyprint import HTML
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def sofor_gorev_pdf(request):
+    sofor_id = request.GET.get("sofor")
+    baslangic = request.GET.get("baslangic")
+    bitis = request.GET.get("bitis")
+
+    filtrelenmis_gorevler = []
+    if sofor_id and baslangic and bitis:
+        from .models import TalepOnay  # Üstte varsa bu satır silinebilir
+        filtrelenmis_gorevler = TalepOnay.objects.select_related(
+            "talep", "arac", "sofor"
+        ).filter(
+            sofor_id=sofor_id,
+            talep__gidis_tarihi__range=[baslangic, bitis],
+            durum__in=["onaylandi", "tamamlandi"]
+        ).order_by("talep__gidis_tarihi")
+
+    html_string = render_to_string("pdf/sofor_gorev_pdf.html", {
+        "filtrelenmis_gorevler": filtrelenmis_gorevler,
+        "now": timezone.now(),
+    })
+
+    html = HTML(string=html_string)
+    pdf_file = html.write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename="sofor_gorevleri.pdf"'
+    return response
 
 
 
+from django.contrib.auth.decorators import login_required
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.http import HttpResponse
+from weasyprint import HTML
+from .models import AracTalep
+from django.db.models import Q
 
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from weasyprint import HTML
+from django.utils import timezone
+from django.db.models import Q
+
+from .models import AracTalep  # doğru model adını kontrol et
+
+@login_required
+def personel_rapor_pdf(request):
+    baslangic = request.GET.get("baslangic")
+    bitis = request.GET.get("bitis")
+    user = request.user
+
+    raporlar = AracTalep.objects.filter(
+        Q(talep_eden=user) | Q(ek_kisiler__user=user),
+        talep_onay__durum="tamamlandi",
+        gidis_tarihi__range=[baslangic, bitis]
+    ).distinct().prefetch_related("ek_kisiler", "talep_onay")
+
+    html_string = render_to_string("pdf/personel_panel_pdf.html", {
+        "raporlar": raporlar,
+        "baslangic": baslangic,
+        "bitis": bitis,
+        "user": user,  # Şablonda {{ user.get_full_name }} kullanılacaksa bu gerekli
+        "now": timezone.now(),
+    })
+
+    html = HTML(string=html_string)
+    pdf_file = html.write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="gorev_raporu_{baslangic}_{bitis}.pdf"'
+    return response
 

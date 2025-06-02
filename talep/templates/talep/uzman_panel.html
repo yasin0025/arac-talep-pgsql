@@ -3,7 +3,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Yönetici Paneli</title>
+    <title>Uzman Paneli</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -51,75 +51,38 @@
             <img src="{% static 'talep/logo.png' %}" alt="Logo" style="height: 80px;" class="me-4">
             <h2 class="mb-0 fw-bold">ARAÇ TALEP SİSTEMİ</h2>
         </div>
-        <span class="fw-semibold">Yönetici Paneli</span>
+        <span class="fw-semibold">Uzman Paneli</span>
     </div>
 
     <!-- Sekmeler -->
     <ul class="nav nav-tabs" id="tabMenu">
         <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#mudur_bekleyen">Bekleyen Talepler</a>
+            <a class="nav-link {% if aktif_sekme == 'bekleyen' %}active{% endif %}" data-bs-toggle="tab" href="#uzman_bekleyen">Bekleyen Talepler</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#mudur_gecmis">Geçmiş Görevler</a>
+            <a class="nav-link {% if aktif_sekme == 'gecmis' %}active{% endif %}" data-bs-toggle="tab" href="#uzman_gecmis">Geçmiş Görevler</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#mudur_durumtakvim">Araç Durumu & Takvim</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#mudur_sofor_gorev">Şoför Görevleri</a>
+            <a class="nav-link {% if aktif_sekme == 'takvim' %}active{% endif %}" data-bs-toggle="tab" href="#uzman_durumtakvim">Araç Durumu & Takvim</a>
         </li>
     </ul>
 
-    <!-- Analiz Paneli Butonu -->
-    <div class="d-flex justify-content-end my-3">
-        <a href="{% url 'analiz_panel' %}" class="btn btn-danger fw-semibold shadow-sm px-4 py-2">
-            📊 Analiz Paneli
-        </a>
-    </div>
-
     <!-- Sekme İçerikleri -->
     <div class="tab-content">
-        <div class="tab-pane active" id="mudur_bekleyen">
-            {% include 'talep/mudur_bekleyen_talepler.html' %}
+        <div class="tab-pane {% if aktif_sekme == 'bekleyen' %}active{% endif %}" id="uzman_bekleyen">
+            {% include 'talep/sekme_uzman_bekleyen_talepler.html' %}
         </div>
-        <div class="tab-pane" id="mudur_gecmis">
-            {% include 'talep/mudur_gecmis_gorevler.html' %}
+        <div class="tab-pane {% if aktif_sekme == 'gecmis' %}active{% endif %}" id="uzman_gecmis">
+            {% include 'talep/sekme_uzman_gecmis_gorevler.html' %}
         </div>
-        <div class="tab-pane" id="mudur_durumtakvim">
-            {% include 'talep/mudur_takvim_arac_durum.html' %}
-        </div>
-        <div class="tab-pane" id="mudur_sofor_gorev">
-            {% include 'talep/sekme_sofor_gorevleri.html' %}
+        <div class="tab-pane {% if aktif_sekme == 'takvim' %}active{% endif %}" id="uzman_durumtakvim">
+            {% include 'talep/sekme_uzman_arac_takvim.html' %}
         </div>
     </div>
 </div>
 
+<!-- Bootstrap ve Sekme Hash Takibi -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const hash = window.location.hash;
-
-    if (hash) {
-        const activeTabLink = document.querySelector(`a[href="${hash}"]`);
-        const activePane = document.querySelector(hash);
-
-        if (activeTabLink && activePane) {
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-            activeTabLink.classList.add('active');
-
-            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-            activePane.classList.add('active');
-        }
-    }
-
-    document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(link => {
-        link.addEventListener('shown.bs.tab', function (e) {
-            const target = e.target.getAttribute('href');
-            history.replaceState(null, null, target);
-        });
-    });
-});
-</script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const hash = window.location.hash;
@@ -136,13 +99,24 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Sekme değiştirince URL hash güncelle
     document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(link => {
         link.addEventListener('shown.bs.tab', function (e) {
             const newHash = e.target.getAttribute('href');
             history.replaceState(null, null, newHash);
         });
     });
+
+    // Takvimde tarih seçilince URL'yi güncelle
+    const tarihInput = document.getElementById("uzmanTakvimTarihi");
+    if (tarihInput) {
+        tarihInput.addEventListener("change", function () {
+            const secilenTarih = this.value;
+            const url = new URL(window.location.href);
+            url.searchParams.set("tarih", secilenTarih);
+            url.searchParams.set("sekme", "takvim");
+            window.location.href = url.pathname + url.search + "#uzman_durumtakvim";
+        });
+    }
 });
 </script>
 

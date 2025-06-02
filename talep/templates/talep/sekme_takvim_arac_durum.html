@@ -1,6 +1,5 @@
 {% load custom_tags %}
 
-
 <div class="bg-white p-4 shadow rounded">
     <h5 class="text-danger">Araç Durumu & Takvim</h5>
 
@@ -22,6 +21,7 @@
                         <th>Şoför</th>
                         <th>Detay</th>
                         <th>İşlem</th>
+                        <th>Tarihçe</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -51,11 +51,17 @@
                                 <span class="text-muted">-</span>
                             {% endif %}
                         </td>
+                        <td>
+                            <button type="button" class="btn btn-outline-dark btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#tarihceModal{{ talep.id }}">
+                                🕓
+                            </button>
+                        </td>
                     </tr>
 
                     <!-- Detay Satırı -->
                     <tr class="collapse bg-light" id="detay{{ talep.id }}">
-                        <td colspan="6" class="text-start">
+                        <td colspan="7" class="text-start">
                             <strong>Görev Açıklaması:</strong> {{ talep.gorev_aciklamasi|linebreaks }}<br>
                             <strong>Ek Kişiler:</strong>
                             {% if talep.ek_kisiler.exists %}
@@ -70,7 +76,7 @@
                         </td>
                     </tr>
 
-                    <!-- Modal -->
+                    <!-- Modal: Görev Tamamla -->
                     <div class="modal fade" id="tamamlaModal{{ talep.id }}" tabindex="-1">
                         <div class="modal-dialog">
                             <form method="post" action="{% url 'gorev_tamamla' talep.id %}">
@@ -94,6 +100,41 @@
                                     </div>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+
+                    <!-- Modal: Görev Tarihçesi -->
+                    <div class="modal fade" id="tarihceModal{{ talep.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">Görev Tarihçesi</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">
+                                            Talep Oluşturuldu: {{ talep.talep_tarihi|date:"d.m.Y H:i" }}
+                                        </li>
+                                        {% if talep.uzman_onay_tarihi %}
+                                        <li class="list-group-item">
+                                            Uzman {{ talep.uzman_onaylayan.userprofile.adsoyad }} onayladı:
+                                            {{ talep.uzman_onay_tarihi|date:"d.m.Y H:i" }}
+                                        </li>
+                                        {% endif %}
+                                        {% if talep.talep_onay and talep.talep_onay.atama_tarihi %}
+                                        <li class="list-group-item">
+                                            Baş Şoför atama yaptı: {{ talep.talep_onay.atama_tarihi|date:"d.m.Y H:i" }}
+                                        </li>
+                                        {% endif %}
+                                        {% if talep.talep_onay and talep.talep_onay.yonetici_onay_tarihi %}
+                                        <li class="list-group-item">
+                                            Yönetici onayı: {{ talep.talep_onay.yonetici_onay_tarihi|date:"d.m.Y H:i" }}
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}

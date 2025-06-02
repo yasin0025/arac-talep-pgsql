@@ -10,7 +10,9 @@ class AracAdmin(admin.ModelAdmin):
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'adsoyad', 'rol']
-    search_fields = ('ad_soyad', 'user__username')
+    search_fields = ('adsoyad', 'user__username')
+    list_filter = ('rol',)
+
 
 @admin.register(Sofor)
 class SoforAdmin(admin.ModelAdmin):

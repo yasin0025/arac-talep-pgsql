@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Şoför Görev Raporu</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 11px;
+            margin: 20px;
+        }
+        h2 {
+            color: #d9534f;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #999;
+            padding: 5px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 10px;
+            text-align: right;
+            color: #555;
+        }
+        td.text-start {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Şoför Görev Raporu</h2>
+
+    {% if filtrelenmis_gorevler %}
+    <table>
+        <thead>
+            <tr>
+                <th>Gidiş Tarihi / Saati</th>
+                <th>Talep Eden</th>
+                <th>Başkanlık / Birim</th>
+                <th>İlçe</th>
+                <th>Araç</th>
+                <th>Şoför</th>
+                <th>Kişi</th>
+                <th>Varış Saati</th>
+                <th>Açıklama</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for gorev in filtrelenmis_gorevler %}
+            <tr>
+                <td>{{ gorev.talep.gidis_tarihi }}<br><small>{{ gorev.talep.gidis_saati }}</small></td>
+                <td>{{ gorev.talep.talep_eden_adsoyad }}</td>
+                <td>{{ gorev.talep.get_baskanlik_display }}/{{ gorev.talep.birim }}</td>
+                <td>{{ gorev.talep.gidilecek_ilce }}</td>
+                <td>{{ gorev.arac.plaka }}<br><small>{{ gorev.arac.marka_model }}</small></td>
+                <td>{{ gorev.sofor.ad_soyad }}</td>
+                <td>{{ gorev.talep.kisi_sayisi }}</td>
+                <td>
+                    {% if gorev.varis_saati %}
+                        {{ gorev.varis_saati }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="text-start">
+                    {{ gorev.talep.gorev_aciklamasi|default:"-" }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align:center; color:#999;">Bu tarihlerde görev bulunmamaktadır.</p>
+    {% endif %}
+
+    <div class="footer">
+        Rapor oluşturulma saati: {{ now|date:"d.m.Y H:i" }}
+    </div>
+
+</body>
+</html>

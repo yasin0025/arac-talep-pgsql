@@ -1,0 +1,117 @@
+<h5 class="form-section-title mb-4">Geçmiş Taleplerim</h5>
+<table class="table table-bordered align-middle">
+    <thead class="table-danger text-center">
+        <tr>
+            <th>Talep Tarihi</th>
+            <th>Gidiş Tarih / Saat</th>
+            <th>Görev Açıklaması</th>
+            <th>Durum</th>
+            <th>İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for talep in talepler %}
+        <tr>
+            <td>{{ talep.talep_tarihi|date:"d.m.Y H:i" }}</td>
+            <td>{{ talep.gidis_tarihi }} {{ talep.gidis_saati }}</td>
+            <td>{{ talep.gorev_aciklamasi }}</td>
+            <td>
+                {% if talep.uzman_onay_durumu == "bekliyor" %}
+                    <span class="badge bg-primary">Uzman/Şube Müdürü Onayı Bekliyor</span>
+                {% elif talep.uzman_onay_durumu == "reddedildi" %}
+                    <span class="badge bg-danger">Uzman/Şube Müdürü Reddetti</span>
+                    {% if talep.uzman_red_aciklama %}
+                        <div class="text-muted small mt-1">{{ talep.uzman_red_aciklama }}</div>
+                    {% endif %}
+                {% elif talep.uzman_onay_durumu == "onaylandi" and not talep.talep_onay %}
+                    <span class="badge bg-warning text-dark">Baş Şoför Onayı Bekliyor</span>
+                {% elif talep.talep_onay %}
+                    {% if talep.talep_onay.durum == "reddedildi" %}
+                        <span class="badge bg-danger">
+                            {% if talep.talep_onay.arac and talep.talep_onay.sofor %}
+                                Yönetici Reddetti
+                            {% else %}
+                                Baş Şoför Reddetti
+                            {% endif %}
+                        </span>
+                        {% if talep.talep_onay.aciklama %}
+                            <div class="text-muted small mt-1">{{ talep.talep_onay.aciklama }}</div>
+                        {% endif %}
+                    {% elif talep.talep_onay.durum == "iptal" %}
+                        {% if talep.talep_onay.aciklama and "Talep sahibi" in talep.talep_onay.aciklama %}
+                            <span class="badge bg-warning text-dark">Talep Sahibi İptal Etti</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Yönetici İptal Etti</span>
+                        {% endif %}
+                        {% if talep.talep_onay.aciklama %}
+                            <div class="text-muted small mt-1">{{ talep.talep_onay.aciklama }}</div>
+                        {% endif %}
+                    {% elif talep.talep_onay.durum == "ilk" %}
+                        <span class="badge bg-warning text-dark">Baş Şoför Onayı Bekliyor</span>
+                    {% elif talep.talep_onay.durum == "bekliyor" %}
+                        <span class="badge bg-info text-dark">Yönetici Onayı Bekliyor</span>
+                    {% elif talep.talep_onay.durum == "onaylandi" %}
+                        <span class="badge bg-success">Onaylandı</span>
+                    {% elif talep.talep_onay.durum == "tamamlandi" %}
+                        <span class="badge bg-success">Görev Tamamlandı</span>
+                        {% if talep.talep_onay.varis_saati %}
+                            <div class="text-muted small">({{ talep.talep_onay.varis_saati }})</div>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <span class="badge bg-dark">Durum Tespit Edilemedi</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'talep_detay' talep.id %}" class="btn btn-outline-danger btn-sm">Detay</a>
+                {% if talep.uzman_onay_durumu == "bekliyor" %}
+                    <a href="{% url 'geri_cek' talep.id %}" class="btn btn-outline-secondary btn-sm ms-1">Geri Çek</a>
+                {% endif %}
+                {% if talep.talep_onay and talep.talep_onay.durum == "onaylandi" and talep.gidis_tarihi > today %}
+                    <form action="{% url 'iptal_et' talep.id %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-warning btn-sm ms-1" onclick="return confirm('Bu talebi iptal etmek istediğinize emin misiniz?');">
+                            İptal Et
+                        </button>
+                    </form>
+                {% endif %}
+                <button type="button" class="btn btn-outline-dark btn-sm ms-1" data-bs-toggle="modal" data-bs-target="#tarihceModal{{ talep.id }}">🕓Tarihçe</button>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">Henüz talep bulunmamaktadır.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if talepler.has_other_pages %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if talepler.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?sayfa={{ talepler.previous_page_number }}">« Önceki</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">« Önceki</span></li>
+        {% endif %}
+
+        {% for num in talepler.paginator.page_range %}
+            {% if num == talepler.number %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+                <li class="page-item"><a class="page-link" href="?sayfa={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if talepler.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?sayfa={{ talepler.next_page_number }}">Sonraki »</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Sonraki »</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}

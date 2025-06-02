@@ -1,4 +1,3 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="tr">
@@ -35,28 +34,40 @@
                 <tr><th>Kişi Sayısı</th><td>{{ talep.kisi_sayisi }}</td></tr>
                 <tr><th>Gidiş</th><td>{{ talep.gidis_tarihi }} {{ talep.gidis_saati }}</td></tr>
 
-                {% if onay %}
-                    <tr>
-                        <th>Durum</th>
-                        <td>
-                            {% if onay.durum == "onaylandi" %}
-                                <span class="badge bg-success rounded-pill">Onaylandı</span>
-                            {% elif onay.durum == "reddedildi" %}
-                                <span class="badge bg-danger rounded-pill">Reddedildi</span>
-                            {% elif onay.durum == "ilk" %}
-                                <span class="badge bg-warning text-dark rounded-pill">Baş Şoför Onayı Bekliyor</span>
-                            {% elif onay.durum == "bekliyor" %}
-                                <span class="badge bg-info text-dark rounded-pill">Yönetici Onayı Bekliyor</span>
-                            {% elif onay.durum == "tamamlandi" %}
-                                <span class="badge bg-success rounded-pill">Görev Tamamlandı</span>
-                            {% endif %}
-                        </td>
-                    </tr>
+                <tr>
+    <th>Durum</th>
+    <td>
+        {% if onay %}
+            {% if onay.durum == "onaylandi" %}
+                <span class="badge bg-success rounded-pill">Onaylandı</span>
+            {% elif onay.durum == "reddedildi" %}
+                <span class="badge bg-danger rounded-pill">Reddedildi</span>
+            {% elif onay.durum == "iptal" %}
+                <span class="badge bg-warning text-dark rounded-pill">İptal Edildi</span>
+            {% elif onay.durum == "ilk" %}
+                <span class="badge bg-warning text-dark rounded-pill">Baş Şoför Onayı Bekliyor</span>
+            {% elif onay.durum == "bekliyor" %}
+                <span class="badge bg-info text-dark rounded-pill">Yönetici Onayı Bekliyor</span>
+            {% elif onay.durum == "tamamlandi" %}
+                <span class="badge bg-success rounded-pill">Görev Tamamlandı</span>
+            {% endif %}
+        {% else %}
+            {% if talep.uzman_onay_durumu == "bekliyor" %}
+                <span class="badge bg-primary rounded-pill">Uzman/Şube Müdürü Onayı Bekliyor</span>
+            {% elif talep.uzman_onay_durumu == "reddedildi" %}
+                <span class="badge bg-danger rounded-pill">Uzman/Şube Müdürü Reddetti</span>
+            {% else %}
+                <span class="badge bg-dark rounded-pill">Onay Başlatılmadı</span>
+            {% endif %}
+        {% endif %}
+    </td>
+</tr>
 
+
+                {% if onay %}
                     {% if onay.arac %}
                         <tr><th>Araç</th><td>{{ onay.arac.plaka }} - {{ onay.arac.marka_model }}</td></tr>
                     {% endif %}
-
                     {% if onay.sofor %}
                         <tr>
                             <th>Şoför</th>
@@ -68,12 +79,17 @@
                             </td>
                         </tr>
                     {% endif %}
-
                     {% if onay.durum == 'reddedildi' and onay.aciklama %}
                         <tr><th>Red Açıklaması</th><td>{{ onay.aciklama }}</td></tr>
                     {% endif %}
-                {% else %}
-                    <tr><th>Durum</th><td><span class="badge bg-warning text-dark rounded-pill">Baş Şoför Onayı Bekliyor</span></td></tr>
+		    {% elif not onay and talep.uzman_onay_durumu == 'reddedildi' and talep.uzman_red_aciklama %}
+   			<tr><th>Red Açıklaması</th><td>{{ talep.uzman_red_aciklama }}</td></tr>
+		    {% endif %}
+
+		    {% if onay.durum == 'iptal' and onay.aciklama %}
+    <tr><th>İptal Açıklaması</th><td>{{ onay.aciklama }}</td></tr>
+
+
                 {% endif %}
             </table>
         </div>
@@ -106,7 +122,6 @@
     <a href="{% url 'personel_panel' %}" class="btn btn-secondary mt-4">🔙 Geri Dön</a>
 </div>
 
-<!-- Bootstrap Icons (isteğe bağlı) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 </body>
 </html>

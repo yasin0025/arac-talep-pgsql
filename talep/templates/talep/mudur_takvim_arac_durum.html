@@ -13,7 +13,7 @@
 
     <!-- Görevler -->
     {% if bugunku_gorevler %}
-        <h6 class="text-primary mt-4 mb-2 fw-bold">Seçilen Gündeki Görevler</h6>
+        <h6 class="text-primary mt-4 mb-2 fw-bold">Seçilen Güdcaki Görevler</h6>
         <div class="table-responsive">
             <table class="table table-bordered table-striped align-middle text-center">
                 <thead class="table-light">
@@ -24,7 +24,8 @@
                         <th>Tarih / Saat</th>
                         <th>Araç</th>
                         <th>Şoför</th>
-                        <th>Detay</th>
+                        <th>İşlemler</th>
+                        <th>Tarihçe</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -46,15 +47,29 @@
                         <td>
                             <button class="btn btn-outline-secondary btn-sm"
                                     type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#detay{{ item.id }}">
+                                    data-bs-target="#detay{{ item.talep.id }}">
                                 Detaylar
+                            </button>
+
+                            {% if item.durum == "onaylandi" and item.talep.gidis_tarihi > today %}
+                                <button class="btn btn-outline-danger btn-sm mt-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#iptalModal{{ item.talep.id }}">
+                                    İptal Et
+                                </button>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-outline-dark btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#tarihceModal{{ item.talep.id }}">
+                                🕓
                             </button>
                         </td>
                     </tr>
 
                     <!-- Detay Satırı -->
-                    <tr class="collapse bg-light" id="detay{{ item.id }}">
-                        <td colspan="7" class="text-start">
+                    <tr class="collapse bg-light" id="detay{{ item.talep.id }}">
+                        <td colspan="8" class="text-start">
                             <strong>Görev Açıklaması:</strong> {{ item.talep.gorev_aciklamasi|linebreaks }}<br>
                             <strong>Ek Kişiler:</strong>
                             {% if item.talep.ek_kisiler.exists %}
@@ -68,6 +83,63 @@
                             {% endif %}
                         </td>
                     </tr>
+
+                    <!-- İptal Modalı -->
+                    <div class="modal fade" id="iptalModal{{ item.talep.id }}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <form method="post" action="{% url 'mudur_iptal_et' item.talep.id %}">
+                            {% csrf_token %}
+                            <div class="modal-header">
+                              <h5 class="modal-title">Görevi İptal Et</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                              <textarea name="iptal_aciklama" class="form-control" rows="3" placeholder="İptal gerekçesini yazınız..." required></textarea>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="submit" class="btn btn-danger">Görevi İptal Et</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Tarihçe Modal -->
+                    <div class="modal fade" id="tarihceModal{{ item.talep.id }}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-scrollable">
+                        <div class="modal-content">
+                          <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">Görev Tarihçesi</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                          </div>
+                          <div class="modal-body">
+                            <ul class="list-group list-group-flush">
+                              <li class="list-group-item">
+                                Talep Oluşturuldu: {{ item.talep.talep_tarihi|date:"d.m.Y H:i" }}
+                              </li>
+                              {% if item.talep.uzman_onay_tarihi %}
+                              <li class="list-group-item">
+                                Uzman {{ item.talep.uzman_onaylayan.userprofile.adsoyad }} onayladı:
+                                {{ item.talep.uzman_onay_tarihi|date:"d.m.Y H:i" }}
+                              </li>
+                              {% endif %}
+                              {% if item.talep.talep_onay and item.talep.talep_onay.atama_tarihi %}
+                              <li class="list-group-item">
+                                Baş Şoför atama yaptı: {{ item.talep.talep_onay.atama_tarihi|date:"d.m.Y H:i" }}
+                              </li>
+                              {% endif %}
+                              {% if item.talep.talep_onay and item.talep.talep_onay.yonetici_onay_tarihi %}
+                              <li class="list-group-item">
+                                Yönetici onayı: {{ item.talep.talep_onay.yonetici_onay_tarihi|date:"d.m.Y H:i" }}
+                              </li>
+                              {% endif %}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {% endfor %}
                 </tbody>
             </table>
@@ -101,6 +173,7 @@
     </div>
 </div>
 
+<!-- Tarih değişince sayfayı yenile -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const tarihInput = document.querySelector('#mudur-tarih-form input[name="tarih"]');

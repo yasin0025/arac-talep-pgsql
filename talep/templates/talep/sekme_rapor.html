@@ -1,0 +1,76 @@
+<h5 class="form-section-title mb-4">Geçmiş Görevleri Raporla</h5>
+
+<form method="get" action="" class="row g-3 mb-4">
+    <input type="hidden" name="sekme" value="rapor">
+    <div class="col-md-5">
+        <label class="form-section-title">Başlangıç Tarihi</label>
+        <input type="date" name="baslangic" class="form-control" value="{{ request.GET.baslangic }}" required>
+    </div>
+    <div class="col-md-5">
+        <label class="form-section-title">Bitiş Tarihi</label>
+        <input type="date" name="bitis" class="form-control" value="{{ request.GET.bitis }}" required>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-danger w-100">Filtrele</button>
+    </div>
+</form>
+
+{% if raporlar %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="fw-bold text-primary">Talep Eden: {{ user.userprofile.adsoyad }}</div>
+        <a href="{% url 'personel_rapor_pdf' %}?baslangic={{ request.GET.baslangic }}&bitis={{ request.GET.bitis }}" target="_blank" class="btn btn-outline-dark">
+            PDF Oluştur
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover text-center align-middle">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Talep Tarihi</th>
+                    <th>Talep Eden</th>
+                    <th>Gidiş Tarih & Saat</th>
+                    <th>Gidilecek Yer</th>
+                    <th>Görev Açıklaması</th>
+                    <th>Ek Kişiler</th>
+                    <th>Varış Saati</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in raporlar %}
+                <tr>
+                    <td>{{ r.talep_tarihi|date:"d.m.Y H:i" }}</td>
+                    <td>{{ r.talep_eden.userprofile.adsoyad }}</td>
+                    <td>
+                        {{ r.gidis_tarihi|date:"d.m.Y" }}<br>
+                        <small class="text-muted">{{ r.gidis_saati|default:"-" }}</small>
+                    </td>
+                    <td>{{ r.gidilecek_ilce|default:"-" }}</td>
+                    <td>{{ r.gorev_aciklamasi|default:"-" }}</td>
+                    <td>
+                        {% if r.ek_kisiler.exists %}
+                            <ul class="mb-0 ps-3 text-start">
+                                {% for kisi in r.ek_kisiler.all %}
+                                    <li>{{ kisi.ad_soyad }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.talep_onay and r.talep_onay.varis_saati %}
+                            {{ r.talep_onay.varis_saati }}
+                        {% else %}
+                            <span class="text-muted">Girilmedi</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% elif request.GET.baslangic and request.GET.bitis %}
+    <div class="alert alert-warning">Bu tarihler arasında tamamlanan görev bulunmamaktadır.</div>
+{% endif %}

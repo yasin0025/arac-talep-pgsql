@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from .views import analiz_panel, analiz_bos_saat_panel
-
+from talep.views import uzman_panel
 urlpatterns = [
     path('', views.login_view, name='login'),
     path('personel/', views.personel_panel, name='personel_panel'),
@@ -18,5 +18,12 @@ urlpatterns = [
     path('gorev-tamamla/<int:talep_id>/', views.gorev_tamamla, name='gorev_tamamla'),
     path('ajax/kullanici-ara/', views.kullanici_ara, name='kullanici_ara'),
     path('analiz/', views.analiz_panel, name='analiz_panel'),
-    path("analiz/bos-saat/", views.analiz_bos_saat_panel, name="analiz_bos_saat"),  # ✅ burası düzeltildi
+    path("analiz/bos-saat/", views.analiz_bos_saat_panel, name="analiz_bos_saat"),
+    path('uzman/', uzman_panel, name='uzman_panel'),
+    path('uzman/onayla/<int:talep_id>/', views.uzman_onayla, name='uzman_onayla'),
+    path('uzman/reddet/<int:talep_id>/', views.uzman_reddet, name='uzman_reddet'),
+    path('mudur/iptal/<int:talep_id>/', views.mudur_iptal_et, name='mudur_iptal_et'),
+    path('sofor-gorev-pdf/', views.sofor_gorev_pdf, name='sofor_gorev_pdf'),
+    path('personel/rapor-pdf/', views.personel_rapor_pdf, name='personel_rapor_pdf'),
+
 ]

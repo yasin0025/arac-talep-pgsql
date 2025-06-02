@@ -6,6 +6,7 @@
     <title>Personel Paneli - Araç Talep</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         .form-section-title {
             font-weight: bold;
@@ -27,8 +28,25 @@
     </div>
 
     <!-- Yatay Form -->
-    <div class="bg-white shadow p-4 rounded mb-5">
-        <h5 class="form-section-title mb-4">Araç Talep Formu</h5>
+    <div class="bg-white shadow p-4 rounded mb-3">
+        <h5 class="form-section-title text-dark mb-3 fs-5">Araç Talep Formu</h5>
+	{% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == "error" %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {% if message.tags == "success" %}
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                {% else %}
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {% endif %}
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+
         <form method="post" action="{% url 'personel_panel' %}">
             {% csrf_token %}
             <div class="row">
@@ -77,7 +95,7 @@
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-section-title">Gidiş Tarihi</label>
-                    <input type="date" class="form-control" name="gidis_tarihi" required>
+                    <input type="date" class="form-control" name="gidis_tarihi" min="{{ today|date:'Y-m-d' }}" required>
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-section-title">Gidiş Saati</label>
@@ -92,104 +110,35 @@
 
             <div id="ek-kisi-alanlari" class="row"></div>
 
-            <button type="submit" class="btn btn-danger mt-3">Talep Oluştur</button>
+            <button type="button" class="btn btn-danger mt-3" data-bs-toggle="modal" data-bs-target="#uzmanSecModal">
+    		Talep Oluştur
+	    </button>
+
         </form>
     </div>
+<ul class="nav nav-tabs mt-4">
+    <li class="nav-item">
+        <a class="nav-link text-dark {% if sekme == 'talepler' %}active bg-danger text-white{% endif %}" href="?sekme=talepler">
+            Geçmiş Taleplerim
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark {% if sekme == 'rapor' %}active bg-danger text-white{% endif %}" href="?sekme=rapor">
+            Geçmiş Görevleri Raporla
+        </a>
+    </li>
+</ul>
 
-    <!-- Geçmiş Talepler -->
-    <div class="bg-white shadow p-4 rounded">
-        <h5 class="form-section-title mb-4">Geçmiş Taleplerim</h5>
-        <table class="table table-bordered align-middle">
-            <thead class="table-danger text-center">
-                <tr>
-                    <th>Talep Tarihi</th>
-                    <th>Gidiş Tarih / Saat</th>
-                    <th>Görev Açıklaması</th>
-                    <th>Durum</th>
-                    <th>İşlem</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for talep in talepler %}
-                <tr>
-                    <td>{{ talep.talep_tarihi|date:"d.m.Y H:i" }}</td>
-                    <td>{{ talep.gidis_tarihi }} {{ talep.gidis_saati }}</td>
-                    <td>{{ talep.gorev_aciklamasi }}</td>
-                    <td>
-                        {% if talep.talep_onay %}
-                            {% if talep.talep_onay.durum == "ilk" %}
-                                <span class="badge bg-warning text-dark">Baş Şoför Onayı Bekliyor</span>
-                            {% elif talep.talep_onay.durum == "bekliyor" and talep.gidis_tarihi < today %}
-                                <span class="badge bg-secondary">Süresi Geçti</span>
-                            {% elif talep.talep_onay.durum == "bekliyor" %}
-                                <span class="badge bg-info text-dark">Yönetici Onayı Bekliyor</span>
-                            {% elif talep.talep_onay.durum == "onaylandi" %}
-                                <span class="badge bg-success">Onaylandı</span>
-                            {% elif talep.talep_onay.durum == "reddedildi" %}
-                                <span class="badge bg-danger">Reddedildi</span>
-                            {% elif talep.talep_onay.durum == "tamamlandi" %}
-                                <span class="badge bg-success">Görev Tamamlandı</span><br>
-                                <small class="text-muted">
-   				    Varış:
-   				    {% if talep.talep_onay.varis_saati %}
-       					{{ talep.talep_onay.varis_saati }}
-    				    {% else %}
-      				 	Girilmedi
-    			            {% endif %}
-				</small>
 
-                            {% endif %}
-                        {% else %}
-                            <span class="badge bg-dark">Onay Başlatılmadı</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{% url 'talep_detay' talep.id %}" class="btn btn-outline-danger btn-sm">Detay</a>
-                        {% if talep.talep_onay and talep.talep_onay.durum == "ilk" %}
-                            <a href="{% url 'geri_cek' talep.id %}" class="btn btn-outline-secondary btn-sm ms-1">Geri Çek</a>
-                        {% elif talep.talep_onay and talep.talep_onay.durum == "onaylandi" and talep.gidis_tarihi > today %}
-                            <a href="{% url 'iptal_et' talep.id %}" class="btn btn-outline-warning btn-sm ms-1">İptal Et</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center text-muted">Henüz talep bulunmamaktadır.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="tab-content bg-white shadow p-4 rounded">
+    {% if sekme == "rapor" %}
+        {% include 'talep/sekme_rapor.html' %}
+    {% else %}
+        {% include 'talep/sekme_gecmis_talepler.html' %}
+    {% endif %}
+</div>
 
-        {% if talepler.has_other_pages %}
-        <nav>
-            <ul class="pagination justify-content-center">
-                {% if talepler.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?sayfa={{ talepler.previous_page_number }}">« Önceki</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">« Önceki</span></li>
-                {% endif %}
-
-                {% for num in talepler.paginator.page_range %}
-                    {% if num == talepler.number %}
-                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                    {% else %}
-                        <li class="page-item"><a class="page-link" href="?sayfa={{ num }}">{{ num }}</a></li>
-                    {% endif %}
-                {% endfor %}
-
-                {% if talepler.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?sayfa={{ talepler.next_page_number }}">Sonraki »</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">Sonraki »</span></li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
-    </div>
+    
 </div>
 
 <script>
@@ -259,6 +208,104 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Uzman Seçim Modali -->
+<div class="modal fade" id="uzmanSecModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Uzman / Şube Müdürü Seçimi</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="uzman_secimi">Bağlı olduğunuz kişi:</label>
+        <select id="uzman_secimi" class="form-select" required>
+          <option value="">Seçiniz</option>
+          {% for uzman in uzmanlar %}
+              <option value="{{ uzman.id }}">{{ uzman.userprofile.adsoyad }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="uzmanOnaylaBtn" class="btn btn-success">Onayla ve Gönder</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.getElementById("uzmanOnaylaBtn").addEventListener("click", function() {
+    const uzmanId = document.getElementById("uzman_secimi").value;
 
-</body>
+    if (!uzmanId) {
+        alert("Lütfen uzman/şube müdürü seçiniz.");
+        return;
+    }
+
+    // Formun içine gizli bir input olarak uzman id’yi ekle
+    const form = document.querySelector("form");
+    let hiddenInput = document.createElement("input");
+    hiddenInput.type = "hidden";
+    hiddenInput.name = "uzman_onaylayan_id";
+    hiddenInput.value = uzmanId;
+    form.appendChild(hiddenInput);
+
+    form.submit(); // Formu gönder
+});
+</script>
+{% for talep in talepler %}
+<div class="modal fade" id="tarihceModal{{ talep.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content border-dark">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Görev Tarihçesi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <strong>Talep Oluşturuldu:</strong><br>
+            {{ talep.talep_tarihi|date:"d.m.Y H:i" }}
+          </li>
+
+          {% if talep.uzman_onay_tarihi %}
+          <li class="list-group-item">
+            <strong>Uzman Onayı:</strong><br>
+            {{ talep.uzman_onaylayan.userprofile.adsoyad }} - {{ talep.uzman_onay_tarihi|date:"d.m.Y H:i" }}
+          </li>
+          {% endif %}
+
+          {% if talep.talep_onay and talep.talep_onay.atama_tarihi %}
+          <li class="list-group-item">
+            <strong>Baş Şoför Ataması:</strong><br>
+            {{ talep.talep_onay.atama_tarihi|date:"d.m.Y H:i" }}
+          </li>
+          {% endif %}
+
+          {% if talep.talep_onay and talep.talep_onay.yonetici_onay_tarihi %}
+          <li class="list-group-item">
+            <strong>Yönetici Onayı:</strong><br>
+            {{ talep.talep_onay.yonetici_onay_tarihi|date:"d.m.Y H:i" }}
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+    // Scroll konumu hatırlansın
+    document.addEventListener("DOMContentLoaded", function () {
+        const savedPosition = sessionStorage.getItem("scrollY");
+        if (savedPosition !== null) {
+            window.scrollTo(0, parseInt(savedPosition));
+        }
+    });
+
+    window.addEventListener("scroll", function () {
+        sessionStorage.setItem("scrollY", window.scrollY);
+    });
+</script>
+
+{% endfor %}
+
 </html>

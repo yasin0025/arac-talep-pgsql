@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 11pt;
+        }
+        h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+            font-size: 10pt;
+        }
+        th {
+            background-color: #dddddd;
+        }
+        ul {
+            padding-left: 15px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <h3>Geçmiş Görev Raporu</h3>
+
+    <p><strong>Talep Eden:</strong> {{ user.userprofile.adsoyad }}</p>
+    <p><strong>Tarih Aralığı:</strong> {{ baslangic }} - {{ bitis }}</p>
+
+    {% if raporlar %}
+    <table>
+        <thead>
+            <tr>
+                <th>Talep Tarihi</th>
+                <th>Talep Eden</th>
+                <th>Gidiş Tarih & Saat</th>
+                <th>Gidilecek Yer</th>
+                <th>Görev Açıklaması</th>
+                <th>Ek Kişiler</th>
+                <th>Varış Saati</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in raporlar %}
+            <tr>
+                <td>{{ r.talep_tarihi|date:"d.m.Y H:i" }}</td>
+                <td>{{ r.talep_eden.userprofile.adsoyad }}</td>
+                <td>{{ r.gidis_tarihi|date:"d.m.Y" }}<br>{{ r.gidis_saati|default:"-" }}</td>
+                <td>{{ r.gidilecek_ilce|default:"-" }}</td>
+                <td>{{ r.gorev_aciklamasi|default:"-" }}</td>
+                <td>
+                    {% if r.ek_kisiler.exists %}
+                        <ul>
+                        {% for kisi in r.ek_kisiler.all %}
+                            <li>{{ kisi.ad_soyad }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.talep_onay and r.talep_onay.varis_saati %}
+                        {{ r.talep_onay.varis_saati }}
+                    {% else %}
+                        Girilmedi
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>Bu tarihlerde tamamlanmış görev bulunmamaktadır.</p>
+    {% endif %}
+</body>
+</html>
