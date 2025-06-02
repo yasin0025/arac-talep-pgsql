@@ -1,16 +1,14 @@
 from pathlib import Path
 import os
 import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-=!)zsegg+ars@@iadbz7kr8hs-o(-19x@c2oo#x!uym-^+73z6'
-
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'arac-talep-sistemi.onrender.com']
 
-
-# Uygulamalar
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -21,9 +19,9 @@ INSTALLED_APPS = [
     'talep',
 ]
 
-# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # eğer whitenoise yüklüyse
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -34,11 +32,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'arac_talep_sistemi.urls'
 
-# Template ayarları
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Genel template dizini
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -52,43 +49,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'arac_talep_sistemi.wsgi.application'
 
-# Veritabanı
-DATABASES = DATABASES = {
+DATABASES = {
     'default': dj_database_url.config(default='postgres://postgres:12345678@localhost:5432/arac_talep_db')
 }
 
-
-# Şifre güvenlik kuralları
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Dil ve saat dilimi
 LANGUAGE_CODE = 'tr'
 TIME_ZONE = 'Europe/Istanbul'
 USE_I18N = True
 USE_TZ = True
 
-# Statik dosyalar
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'talep/static'),
-]
-
-# Varsayılan primary key alanı
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-LOGIN_URL = '/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'talep/static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_URL = '/'
