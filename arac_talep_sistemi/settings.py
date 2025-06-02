@@ -54,8 +54,8 @@ WSGI_APPLICATION = 'arac_talep_sistemi.wsgi.application'
 
 # Veritabanı
 DATABASES = DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
-    }
+    'default': dj_database_url.config(default='postgres://postgres:12345678@localhost:5432/arac_talep_db')
+}
 
 
 # Şifre güvenlik kuralları
