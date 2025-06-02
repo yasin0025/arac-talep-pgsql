@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-
+import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-=!)zsegg+ars@@iadbz7kr8hs-o(-19x@c2oo#x!uym-^+73z6'
@@ -54,15 +54,8 @@ WSGI_APPLICATION = 'arac_talep_sistemi.wsgi.application'
 
 # Veritabanı
 DATABASES = DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'arac_talep_db',
-        'USER': 'postgres',
-        'PASSWORD': '12345678',
-        'HOST': 'localhost',
-        'PORT': '5432',
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
     }
-}
 
 
 # Şifre güvenlik kuralları
