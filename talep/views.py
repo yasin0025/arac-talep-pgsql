@@ -1074,4 +1074,12 @@ def create_admin_user(request):
         User.objects.create_superuser('admin', 'admin@example.com', 'admin1234')
         return HttpResponse("Admin kullanıcı oluşturuldu.")
     return HttpResponse("Zaten admin var.")
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+
+def create_temp_admin(request):
+    if not User.objects.filter(username='yasinadmin').exists():
+        User.objects.create_superuser('yasinadmin', 'admin@mail.com', '12345678')
+        return HttpResponse("Yeni admin oluşturuldu.")
+    return HttpResponse("Zaten var.")
 
