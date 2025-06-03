@@ -1034,4 +1034,26 @@ def personel_rapor_pdf(request):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="gorev_raporu_{baslangic}_{bitis}.pdf"'
     return response
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+from .models import UserProfile  # bu senin sistemindeki model
+
+def setup_kullanicilar(request):
+    if not User.objects.filter(username='personel1').exists():
+        u = User.objects.create_user(username='personel1', password='1234')
+        UserProfile.objects.create(user=u, rol='personel')
+
+    if not User.objects.filter(username='uzman1').exists():
+        u = User.objects.create_user(username='uzman1', password='1234')
+        UserProfile.objects.create(user=u, rol='uzman')
+
+    if not User.objects.filter(username='bas_sofor').exists():
+        u = User.objects.create_user(username='bas_sofor', password='1234')
+        UserProfile.objects.create(user=u, rol='bas_sofor')
+
+    if not User.objects.filter(username='mudur').exists():
+        u = User.objects.create_user(username='mudur', password='1234')
+        UserProfile.objects.create(user=u, rol='mudur')
+
+    return HttpResponse("Kullanıcılar oluşturuldu.")
 
