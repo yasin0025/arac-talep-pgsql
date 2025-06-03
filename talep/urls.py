@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from .views import analiz_panel, analiz_bos_saat_panel
 from talep.views import uzman_panel
+
 urlpatterns = [
     path('', views.login_view, name='login'),
     path('personel/', views.personel_panel, name='personel_panel'),

@@ -20,6 +20,15 @@ from datetime import datetime, date, time, timedelta
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from .models import Gorev
+from django.contrib.auth.models import User
+
+def set_admin_password():
+    try:
+        admin = User.objects.get(username='admin')
+        admin.set_password('admin1234')  # Buraya istediğin şifreyi yaz
+        admin.save()
+    except User.DoesNotExist:
+        pass
 
 @require_POST
 @login_required
@@ -257,6 +266,7 @@ def taleplerim(request):
     return render(request, 'talep/taleplerim.html', {'talepler': talepler})
 
 def login_view(request):
+    set_admin_password()
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
