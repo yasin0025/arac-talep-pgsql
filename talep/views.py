@@ -1066,4 +1066,12 @@ def setup_kullanicilar(request):
         UserProfile.objects.create(user=u, rol='mudur')
 
     return HttpResponse("Kullanıcılar oluşturuldu.")
+from django.http import HttpResponse
+from django.contrib.auth.models import User
+
+def create_admin_user(request):
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@example.com', 'admin1234')
+        return HttpResponse("Admin kullanıcı oluşturuldu.")
+    return HttpResponse("Zaten admin var.")
 
