@@ -1044,42 +1044,16 @@ def personel_rapor_pdf(request):
     response = HttpResponse(pdf_file, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="gorev_raporu_{baslangic}_{bitis}.pdf"'
     return response
-from django.contrib.auth.models import User
+
+
 from django.http import HttpResponse
-from .models import UserProfile  # bu senin sistemindeki model
+from django.contrib.auth.models import User
 
 def setup_kullanicilar(request):
-    if not User.objects.filter(username='personel1').exists():
-        u = User.objects.create_user(username='personel1', password='1234')
-        UserProfile.objects.create(user=u, rol='personel')
+    if not User.objects.filter(username="admin").exists():
+        User.objects.create_superuser("admin", "admin@example.com", "admin1234")
+        return HttpResponse("Admin kullanıcısı oluşturuldu: admin / admin1234")
+    else:
+        return HttpResponse("Admin kullanıcısı zaten var.")
 
-    if not User.objects.filter(username='uzman1').exists():
-        u = User.objects.create_user(username='uzman1', password='1234')
-        UserProfile.objects.create(user=u, rol='uzman')
-
-    if not User.objects.filter(username='bas_sofor').exists():
-        u = User.objects.create_user(username='bas_sofor', password='1234')
-        UserProfile.objects.create(user=u, rol='bas_sofor')
-
-    if not User.objects.filter(username='mudur').exists():
-        u = User.objects.create_user(username='mudur', password='1234')
-        UserProfile.objects.create(user=u, rol='mudur')
-
-    return HttpResponse("Kullanıcılar oluşturuldu.")
-from django.http import HttpResponse
-from django.contrib.auth.models import User
-
-def create_admin_user(request):
-    if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser('admin', 'admin@example.com', 'admin1234')
-        return HttpResponse("Admin kullanıcı oluşturuldu.")
-    return HttpResponse("Zaten admin var.")
-from django.contrib.auth.models import User
-from django.http import HttpResponse
-
-def create_temp_admin(request):
-    if not User.objects.filter(username='yasinadmin').exists():
-        User.objects.create_superuser('yasinadmin', 'admin@mail.com', '12345678')
-        return HttpResponse("Yeni admin oluşturuldu.")
-    return HttpResponse("Zaten var.")
 
