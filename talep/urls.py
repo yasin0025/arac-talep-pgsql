@@ -2,7 +2,6 @@ from django.urls import path
 from . import views
 from .views import analiz_panel, analiz_bos_saat_panel
 from talep.views import uzman_panel
-from .views import create_temp_admin
 urlpatterns = [
     path('', views.login_view, name='login'),
     path('personel/', views.personel_panel, name='personel_panel'),
@@ -27,5 +26,5 @@ urlpatterns = [
     path('sofor-gorev-pdf/', views.sofor_gorev_pdf, name='sofor_gorev_pdf'),
     path('personel/rapor-pdf/', views.personel_rapor_pdf, name='personel_rapor_pdf'),
     path('create-admin/', views.create_admin_user),
-    path('create-temp-admin/', create_temp_admin),
+
 ]
