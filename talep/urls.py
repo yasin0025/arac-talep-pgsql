@@ -25,6 +25,6 @@ urlpatterns = [
     path('mudur/iptal/<int:talep_id>/', views.mudur_iptal_et, name='mudur_iptal_et'),
     path('sofor-gorev-pdf/', views.sofor_gorev_pdf, name='sofor_gorev_pdf'),
     path('personel/rapor-pdf/', views.personel_rapor_pdf, name='personel_rapor_pdf'),
-    path('create-admin/', views.create_admin_user),
+
 
 ]
