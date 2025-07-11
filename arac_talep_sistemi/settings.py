@@ -24,6 +24,7 @@ INSTALLED_APPS = [
 
 # Middleware
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -87,7 +88,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Statik dosyalar
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'talep/static'),
 ]
@@ -95,6 +96,6 @@ STATICFILES_DIRS = [
 # Varsayılan primary key alanı
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # render burada depolar
 
 

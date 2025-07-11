@@ -1057,3 +1057,7 @@ def setup_kullanicilar(request):
         return HttpResponse("Admin kullanıcısı zaten var.")
 
 
+from django.http import HttpResponse
+
+def home(request):
+    return HttpResponse("Araç talep sistemi çalışıyor.")
