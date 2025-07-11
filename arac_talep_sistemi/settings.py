@@ -7,7 +7,8 @@ SECRET_KEY = 'django-insecure-=!)zsegg+ars@@iadbz7kr8hs-o(-19x@c2oo#x!uym-^+73z6
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['arac-talep.onrender.com']
+ALLOWED_HOSTS = ['.onrender.com', '127.0.0.1']
+
 
 
 # Uygulamalar
@@ -54,8 +55,13 @@ WSGI_APPLICATION = 'arac_talep_sistemi.wsgi.application'
 
 # Veritabanı
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
+    'default': dj_database_url.parse(
+        'postgresql://arac_talep_sistemi_user:IaKbNy7TayoPmM79fceO7ZK3XnaJeCwq@dpg-d1oap7nfte5s73b2r2m0-a/arac_talep_sistemi',
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
+
 
 
 # Şifre güvenlik kuralları
