@@ -1,18 +1,29 @@
+# talep/management/commands/createsu.py
 import os
-from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+from django.contrib.auth import get_user_model
 
 class Command(BaseCommand):
-    help = "Create a superuser if it doesn't exist (reads creds from env)"
+    help = "Create/update superuser from env vars"
 
     def handle(self, *args, **options):
         User = get_user_model()
         username = os.environ.get("DJANGO_SU_USERNAME", "admin")
-        password = os.environ.get("DJANGO_SU_PASSWORD", "admin123")
-        email = os.environ.get("DJANGO_SU_EMAIL", "admin@example.com")
+        password = os.environ.get("DJANGO_SU_PASSWORD", "YeniSifre!123")
+        email    = os.environ.get("DJANGO_SU_EMAIL", "admin@example.com")
 
-        if not User.objects.filter(username=username).exists():
-            User.objects.create_superuser(username=username, email=email, password=password)
-            self.stdout.write(self.style.SUCCESS(f"Superuser '{username}' created."))
-        else:
-            self.stdout.write("Superuser already exists.")
+        if not username or not password:
+            self.stdout.write("createsu skipped: missing DJANGO_SU_USERNAME or DJANGO_SU_PASSWORD")
+            return
+
+        user, created = User.objects.get_or_create(
+            username=username, defaults={"email": email}
+        )
+        user.is_staff = True
+        user.is_superuser = True
+        user.email = email or user.email
+        user.set_password(password)
+        user.save()
+
+        msg = "created" if created else "updated"
+        self.stdout.write(self.style.SUCCESS(f"Superuser '{username}' {msg}."))
